@@ -1,32 +1,34 @@
 #ifndef NOTIFICATIONMONITOR_H
 #define NOTIFICATIONMONITOR_H
 
-#include <QtCore/QObject>
+#include <QtCore/QLoggingCategory>
 #include <QtCore/QMap>
+#include <QtCore/QObject>
+
+#include "notification.h"
 
 namespace watchfish
 {
 
-class Notification;
+Q_DECLARE_LOGGING_CATEGORY(notificationMonitorCat)
+
+class NotificationMonitorPrivate;
 
 class NotificationMonitor : public QObject
 {
 	Q_OBJECT
+	Q_DECLARE_PRIVATE(NotificationMonitor)
 
 public:
+	explicit NotificationMonitor(QObject *parent = 0);
 	~NotificationMonitor();
-
-	static NotificationMonitor *instance();
-
-	void processIncomingNotification(quint32 id, const QVariantHash &content);
-	void processCloseNotification(quint32 id, quint32 reason);
 
 signals:
 	void notification(Notification *n);
 
 private:
-	explicit NotificationMonitor(QObject *parent = 0);
-	QMap<quint32, Notification*> _notifs;
+	Q_PRIVATE_SLOT(d_func(), void handleBusSocketActivated())
+	NotificationMonitorPrivate * const d_ptr;
 };
 
 }
