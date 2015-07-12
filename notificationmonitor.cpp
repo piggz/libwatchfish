@@ -16,17 +16,55 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QtCore/QFileInfo>
 #include <QtCore/QMessageLogger>
+#include <QtCore/QSettings>
 #include <QtCore/QSocketNotifier>
 #include <dbus/dbus.h>
 
 #include "notification.h"
 #include "notificationmonitor.h"
 
+#define CATEGORY_DEFINITION_FILE_DIRECTORY "/usr/share/lipstick/notificationcategories"
+#define CATEGORY_REFRESH_CHECK_TIME 120
+
 namespace watchfish
 {
 
 Q_LOGGING_CATEGORY(notificationMonitorCat, "watchfish-NotificationMonitor")
+
+namespace
+{
+struct ProtoNotification
+{
+	QString sender;
+	QString appIcon;
+	QString summary;
+	QString body;
+	QHash<QString, QString> hints;
+	int expireTimeout;
+	QStringList actions;
+};
+
+QDebug operator<<(QDebug &debug, const ProtoNotification &proto)
+{
+	QDebugStateSaver saver(debug);
+	Q_UNUSED(saver);
+	debug.nospace() << "Notification(sender=" << proto.sender << ", summary=" << proto.summary
+					<< ", body=" << proto.body << ", appIcon=" << proto.appIcon
+					<< ", hints=" << proto.hints << ", timeout=" << proto.expireTimeout
+					<< ", actions=" << proto.actions << ")";
+	return debug;
+}
+
+struct CategoryCacheEntry
+{
+	QHash<QString, QString> data;
+	QDateTime lastReadTime;
+	QDateTime lastCheckTime;
+};
+
+}
 
 class NotificationMonitorPrivate
 {
@@ -38,19 +76,23 @@ class NotificationMonitorPrivate
 	/** Low level dbus connection used for sniffing. */
 	DBusConnection *_conn;
 	/** Serials of DBUS method calls of which we are expecting a reply. */
-	QHash<quint32, QVariantHash> _pending_confirmation;
+	QHash<quint32, ProtoNotification> _pendingConfirmation;
+    /** Cache of notification category info. */
+    mutable QHash<QString, CategoryCacheEntry> _categoryCache;
 
 	NotificationMonitorPrivate(NotificationMonitor *q);
 	~NotificationMonitorPrivate();
 
-	void processIncomingNotification(quint32 id, const QVariantHash &content);
+	void processIncomingNotification(quint32 id, const ProtoNotification &proto);
 	void processCloseNotification(quint32 id, quint32 reason);
 
 	void sendMessageWithString(const char *service, const char *path, const char *iface, const char *method, const char *arg);
 	void addMatchRule(const char *rule);
 	void removeMatchRule(const char *rule);
 
-	QVariantHash parseNotifyCall(DBusMessage *msg) const;
+	ProtoNotification parseNotifyCall(DBusMessage *msg) const;
+
+	QHash<QString,QString> getCategoryInfo(const QString &s) const;
 
 	static dbus_bool_t busWatchAdd(DBusWatch *watch, void *data);
 	static void busWatchRemove(DBusWatch *watch, void *data);
@@ -106,10 +148,10 @@ NotificationMonitorPrivate::~NotificationMonitorPrivate()
 	dbus_connection_unref(_conn);
 }
 
-void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const QVariantHash &content)
+void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const ProtoNotification &proto)
 {
 	Q_Q(NotificationMonitor);
-	qCDebug(notificationMonitorCat) << "Incoming notification" << id << content;
+	qCDebug(notificationMonitorCat) << "Incoming notification" << id << proto;
 
 	Notification *n = _notifs.value(id, 0);
 
@@ -118,16 +160,33 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const Q
 		n = new Notification(id, q);
 	}
 
-	n->setSender(content["sender"].toString());
-	n->setSummary(content["summary"].toString());
-	n->setBody(content["body"].toString());
-	n->setIcon(content["icon"].toString());
+	n->setSender(proto.sender);
+	n->setSummary(proto.summary);
+	n->setBody(proto.body);
+	n->setIcon(proto.appIcon);
 
-	QDateTime timestamp = content["timestamp"].toDateTime();
+	// Handle nemo specific stuff
+	QDateTime timestamp = QDateTime::fromString(proto.hints["x-nemo-timestamp"], Qt::ISODate);
 	if (timestamp.isValid()) {
 		n->setTimestamp(timestamp);
 	} else if (is_new_notification) {
 		n->setTimestamp(QDateTime::currentDateTime());
+	}
+
+	n->setPreviewSummary(proto.hints.value("x-nemo-preview-summary"));
+	n->setPreviewBody(proto.hints.value("x-nemo-preview-body"));
+
+	// Nemo D-Bus actions...
+	for (int i = 0; i < proto.actions.size(); i += 2) {
+		const QString &actionName = proto.actions[i];
+		QString hintName = QString("x-nemo-remote-action-%1").arg(actionName);
+		QString remote = proto.hints.value(hintName);
+		QStringList remoteParts = remote.split(' ');
+		if (remoteParts.size() >= 4) {
+			n->addDBusAction(actionName,
+							 remoteParts[0], remoteParts[1], remoteParts[2], remoteParts[3],
+							 remoteParts.mid(4));
+		}
 	}
 
 	if (is_new_notification) {
@@ -173,9 +232,9 @@ void NotificationMonitorPrivate::removeMatchRule(const char *rule)
 						  "org.freedesktop.DBus", "RemoveMatch", rule);
 }
 
-QVariantHash NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) const
+ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) const
 {
-	QVariantHash r;
+	ProtoNotification proto;
 	DBusMessageIter iter, sub;
 	const char *app_name, *app_icon, *summary, *body;
 	quint32 replaces_id;
@@ -183,7 +242,7 @@ QVariantHash NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) const
 
 	if (strcmp(dbus_message_get_signature(msg), "susssasa{sv}i") != 0) {
 		qCWarning(notificationMonitorCat) << "Invalid signature";
-		return r;
+		return proto;
 	}
 
 	dbus_message_iter_init(msg, &iter);
@@ -201,17 +260,23 @@ QVariantHash NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) const
 	dbus_message_iter_get_basic(&iter, &body);
 	dbus_message_iter_next(&iter);
 
-	QStringList actions;
+	// Add basic notification information
+	proto.sender = QString::fromUtf8(app_name);
+	proto.appIcon = QString::fromUtf8(app_icon);
+	proto.summary = QString::fromUtf8(summary);
+	proto.body = QString::fromUtf8(body);
+
 	dbus_message_iter_recurse(&iter, &sub);
 	while (dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_STRING) {
 		const char *action;
 		dbus_message_iter_get_basic(&sub, &action);
-		actions.append(QString::fromUtf8(action));
+		proto.actions.append(QString::fromUtf8(action));
 		dbus_message_iter_next(&sub);
 	}
-	r.insert("actions", QVariant::fromValue(actions));
 	dbus_message_iter_next(&iter);
 
+	// Parse extended information
+	QHash<QString, QString> hints;
 	dbus_message_iter_recurse(&iter, &sub);
 	while (dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_DICT_ENTRY) {
 		DBusMessageIter entry, value;
@@ -222,14 +287,10 @@ QVariantHash NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) const
 		dbus_message_iter_next(&entry);
 
 		dbus_message_iter_recurse(&entry, &value);
-		if (strcmp(key, "category") == 0 && dbus_message_iter_get_arg_type(&value) == DBUS_TYPE_STRING) {
+		if (dbus_message_iter_get_arg_type(&value) == DBUS_TYPE_STRING) {
 			const char *s;
 			dbus_message_iter_get_basic(&value, &s);
-			r.insert("category", QString::fromUtf8(s));
-		} else if (strcmp(key, "x-nemo-timestamp") == 0 && dbus_message_iter_get_arg_type(&value) == DBUS_TYPE_STRING) {
-			const char *s;
-			dbus_message_iter_get_basic(&value, &s);
-			r.insert("timestamp", QDateTime::fromString(QString::fromUtf8(s), Qt::ISODate));
+			hints.insert(key, QString::fromUtf8(s));
 		}
 
 		dbus_message_iter_next(&sub);
@@ -238,17 +299,45 @@ QVariantHash NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) const
 	dbus_message_iter_next(&iter);
 	Q_ASSERT(dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INT32);
 	dbus_message_iter_get_basic(&iter, &expire_timeout);
+	proto.expireTimeout = expire_timeout;
 
-	r.insert("sender", QString::fromUtf8(app_name));
-	r.insert("app_icon", QString::fromUtf8(app_icon));
-	r.insert("summary", QString::fromUtf8(summary));
-	r.insert("body", QString::fromUtf8(body));
-
-	if (strlen(app_icon) > 0) {
-		r.insert("icon", QString::fromLocal8Bit(app_icon));
+	if (hints.contains("category")) {
+		proto.hints = getCategoryInfo(hints["category"]);
+		proto.hints.unite(hints);
+	} else {
+		proto.hints = hints;
 	}
 
-	return r;
+	return proto;
+}
+
+QHash<QString,QString> NotificationMonitorPrivate::getCategoryInfo(const QString &category) const
+{
+	bool in_cache = _categoryCache.contains(category);
+	bool needs_check = !in_cache ||
+			_categoryCache[category].lastCheckTime.secsTo(QDateTime::currentDateTime()) > CATEGORY_REFRESH_CHECK_TIME;
+	if (needs_check) {
+		QFileInfo finfo(QString("%1/%2.conf").arg(CATEGORY_DEFINITION_FILE_DIRECTORY, category));
+		if (finfo.exists()) {
+			CategoryCacheEntry &entry = _categoryCache[category];
+			if (!in_cache || finfo.lastModified() > entry.lastReadTime) {
+				QSettings settings(finfo.absoluteFilePath(), QSettings::IniFormat);
+				entry.data.clear();
+				foreach (const QString &key, settings.allKeys()) {
+					entry.data[key] = settings.value(key).toString();
+				}
+				entry.lastReadTime = finfo.lastModified();
+			}
+			entry.lastCheckTime = QDateTime::currentDateTime();
+			return entry.data;
+		} else {
+			qCWarning(notificationMonitorCat) << "Notification category" << category << "does not exist";
+			_categoryCache.remove(category);
+			return QHash<QString, QString>();
+		}
+	} else {
+		return _categoryCache[category].data;
+	}
 }
 
 dbus_bool_t NotificationMonitorPrivate::busWatchAdd(DBusWatch *watch, void *data)
@@ -306,16 +395,16 @@ DBusHandlerResult NotificationMonitorPrivate::busMessageFilter(DBusConnection *c
 	case DBUS_MESSAGE_TYPE_METHOD_CALL:
 		if (dbus_message_is_method_call(msg, "org.freedesktop.Notifications", "Notify")) {
 			quint32 serial = dbus_message_get_serial(msg);
-			QVariantHash content = self->parseNotifyCall(msg);
-			self->_pending_confirmation.insert(serial, content);
+			ProtoNotification proto = self->parseNotifyCall(msg);
+			self->_pendingConfirmation.insert(serial, proto);
 		}
 		break;
 	case DBUS_MESSAGE_TYPE_METHOD_RETURN:
-		if (self->_pending_confirmation.contains(dbus_message_get_reply_serial(msg))) {
+		if (self->_pendingConfirmation.contains(dbus_message_get_reply_serial(msg))) {
 			quint32 id;
 			if (dbus_message_get_args(msg, &error, DBUS_TYPE_UINT32, &id, DBUS_TYPE_INVALID)) {
-				QVariantHash content = self->_pending_confirmation.take(dbus_message_get_reply_serial(msg));
-				self->processIncomingNotification(id, content);
+				ProtoNotification proto = self->_pendingConfirmation.take(dbus_message_get_reply_serial(msg));
+				self->processIncomingNotification(id, proto);
 			} else {
 				qCWarning(notificationMonitorCat) << "Could not parse notification method return";
 			}

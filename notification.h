@@ -21,6 +21,7 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QDateTime>
+#include <QtCore/QStringList>
 
 namespace watchfish
 {
@@ -41,6 +42,15 @@ class Notification : public QObject
 	Q_PROPERTY(QDateTime timestamp READ timestamp WRITE setTimestamp NOTIFY timestampChanged)
 	/** Icon file path */
 	Q_PROPERTY(QString icon READ icon WRITE setIcon NOTIFY iconChanged)
+	Q_PROPERTY(int urgency READ urgency WRITE setUrgency NOTIFY urgencyChanged)
+	Q_PROPERTY(bool transient READ transient WRITE setTransient NOTIFY transientChanged)
+
+	/* Nemo stuff */
+	Q_PROPERTY(QString previewSummary READ previewSummary WRITE setPreviewSummary NOTIFY previewSummaryChanged)
+	Q_PROPERTY(QString previewBody READ previewBody WRITE setPreviewBody NOTIFY previewBodyChanged)
+
+	Q_PROPERTY(QStringList actions READ actions NOTIFY actionsChanged)
+
 	Q_ENUMS(CloseReason)
 
 public:
@@ -71,12 +81,38 @@ public:
 	QString icon() const;
 	void setIcon(const QString &icon);
 
+	int urgency() const;
+	void setUrgency(int urgency);
+
+	bool transient() const;
+	void setTransient(bool transient);
+
+	QString previewSummary() const;
+	void setPreviewSummary(const QString &summary);
+
+	QString previewBody() const;
+	void setPreviewBody(const QString &body);
+
+	QStringList actions() const;
+	void addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QStringList &args = QStringList());
+
+public slots:
+	void invokeAction(const QString &action);
+	void close();
+
 signals:
 	void senderChanged();
 	void summaryChanged();
 	void bodyChanged();
 	void timestampChanged();
 	void iconChanged();
+	void urgencyChanged();
+	void transientChanged();
+
+	void previewSummaryChanged();
+	void previewBodyChanged();
+
+	void actionsChanged();
 
 	void closed(CloseReason reason);
 

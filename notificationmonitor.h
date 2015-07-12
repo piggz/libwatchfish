@@ -42,6 +42,7 @@ public:
 	~NotificationMonitor();
 
 signals:
+    /** Emitted when a notification arrives. */
 	void notification(Notification *n);
 
 private:
