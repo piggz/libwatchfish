@@ -4,11 +4,9 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 CONFIG += link_pkgconfig
-PKGCONFIG += dbus-1
-INCLUDEPATH += /usr/include/dbus-1.0
+PKGCONFIG += dbus-1 timed-qt5
 
-HEADERS = notificationmonitor.h \
-    notification.h
-SOURCES = notificationmonitor.cpp \
-    notification.cpp
-
+HEADERS = notificationmonitor.h notification.h \
+    walltimemonitor.h
+SOURCES = notificationmonitor.cpp notification.cpp \
+    walltimemonitor.cpp
