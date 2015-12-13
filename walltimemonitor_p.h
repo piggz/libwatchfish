@@ -49,91 +49,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtCore/QMessageLogger>
+#ifndef WATCHFISH_WALLTIMEMONITOR_P_H
+#define WATCHFISH_WALLTIMEMONITOR_P_H
+
+#include <timed-qt5/interface>
+#include <timed-qt5/wallclock>
 
 #include "walltimemonitor.h"
-#include "walltimemonitor_p.h"
 
 namespace watchfish
 {
 
-Q_LOGGING_CATEGORY(walltimeMonitorCat, "watchfish-WallTimeMonitor")
-
-WallTimeMonitorPrivate::WallTimeMonitorPrivate(WallTimeMonitor *q)
-	: q_ptr(q)
+class WallTimeMonitorPrivate : public QObject
 {
-	Maemo::Timed::Interface ifc;
-	ifc.settings_changed_connect(this, SLOT(handleTimedSettingsChanged(Maemo::Timed::WallClock::Info,bool)));
+	Q_OBJECT
 
-	QDBusReply<Maemo::Timed::WallClock::Info> reply = ifc.get_wall_clock_info_sync();
-	if (reply.isValid()) {
-		info = reply.value();
-	} else {
-		qCWarning(walltimeMonitorCat) << "D-Bus error while contacting timed:" << reply.error().message();
-	}
-}
+public:
+	WallTimeMonitorPrivate(WallTimeMonitor *q);
+	~WallTimeMonitorPrivate();
 
-WallTimeMonitorPrivate::~WallTimeMonitorPrivate()
-{
-	Maemo::Timed::Interface ifc;
-	ifc.settings_changed_disconnect(this, SLOT(handleTimedSettingsChanged(Maemo::Timed::WallClock::Info,bool)));
-}
+	Maemo::Timed::WallClock::Info info;
 
-void WallTimeMonitorPrivate::handleTimedSettingsChanged(const Maemo::Timed::WallClock::Info &newInfo, bool timeChanged)
-{
-	Q_Q(WallTimeMonitor);
+private slots:
+	void handleTimedSettingsChanged(const Maemo::Timed::WallClock::Info & newInfo, bool timeChanged);
 
-	bool tzChange = newInfo.humanReadableTz() != info.humanReadableTz();
-	bool tzaChange = newInfo.tzAbbreviation() != info.tzAbbreviation();
-	bool tzoChange = newInfo.secondsEastOfGmt() != info.secondsEastOfGmt();
-	bool hourModeChange = newInfo.flagFormat24() != info.flagFormat24();
-
-	info = newInfo;
-
-	if (tzChange)
-		emit q->timezoneChanged();
-	if (tzaChange)
-		emit q->timezoneAbbreviationChanged();
-	if (tzoChange)
-		emit q->timezoneOffsetFromUtcChanged();
-	if (timeChanged)
-		emit q->systemTimeChanged();
-	if (tzChange || tzaChange || tzoChange || timeChanged || hourModeChange)
-		emit q->timeChanged();
-}
-
-WallTimeMonitor::WallTimeMonitor(QObject *parent)
-	: QObject(parent), d_ptr(new WallTimeMonitorPrivate(this))
-{
+private:
+	WallTimeMonitor * const q_ptr;
+	Q_DECLARE_PUBLIC(WallTimeMonitor)
+};
 
 }
 
-WallTimeMonitor::~WallTimeMonitor()
-{
-	delete d_ptr;
-}
-
-QDateTime WallTimeMonitor::time() const
-{
-	return QDateTime::currentDateTime();
-}
-
-QString WallTimeMonitor::timezone() const
-{
-	Q_D(const WallTimeMonitor);
-	return d->info.humanReadableTz();
-}
-
-QString WallTimeMonitor::timezoneAbbreviation() const
-{
-	Q_D(const WallTimeMonitor);
-	return d->info.tzAbbreviation();
-}
-
-int WallTimeMonitor::timezoneOffsetFromUtc() const
-{
-	Q_D(const WallTimeMonitor);
-	return d->info.secondsEastOfGmt();
-}
-
-}
+#endif // WATCHFISH_WALLTIMEMONITOR_P_H

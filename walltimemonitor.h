@@ -26,8 +26,6 @@
 namespace watchfish
 {
 
-Q_DECLARE_LOGGING_CATEGORY(walltimeMonitorCat)
-
 class WallTimeMonitorPrivate;
 
 class WallTimeMonitor : public QObject
@@ -55,6 +53,7 @@ public:
 	int timezoneOffsetFromUtc() const;
 
 signals:
+	void systemTimeChanged();
 	void timeChanged();
 	void timezoneChanged();
 	void timezoneAbbreviationChanged();
