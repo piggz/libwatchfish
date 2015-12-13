@@ -46,7 +46,6 @@ signals:
 	void notification(Notification *n);
 
 private:
-	Q_PRIVATE_SLOT(d_func(), void handleBusSocketActivated())
 	NotificationMonitorPrivate * const d_ptr;
 };
 

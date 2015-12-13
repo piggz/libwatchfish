@@ -20,31 +20,15 @@
 #include <QtCore/QMessageLogger>
 #include <QtCore/QSettings>
 #include <QtCore/QSocketNotifier>
-#include <dbus/dbus.h>
 
 #include "notification.h"
 #include "notificationmonitor.h"
-
-#define CATEGORY_DEFINITION_FILE_DIRECTORY "/usr/share/lipstick/notificationcategories"
-#define CATEGORY_REFRESH_CHECK_TIME 120
+#include "notificationmonitor_p.h"
 
 namespace watchfish
 {
 
 Q_LOGGING_CATEGORY(notificationMonitorCat, "watchfish-NotificationMonitor")
-
-namespace
-{
-struct ProtoNotification
-{
-	QString sender;
-	QString appIcon;
-	QString summary;
-	QString body;
-	QHash<QString, QString> hints;
-	int expireTimeout;
-	QStringList actions;
-};
 
 QDebug operator<<(QDebug &debug, const ProtoNotification &proto)
 {
@@ -56,52 +40,6 @@ QDebug operator<<(QDebug &debug, const ProtoNotification &proto)
 					<< ", actions=" << proto.actions << ")";
 	return debug;
 }
-
-struct CategoryCacheEntry
-{
-	QHash<QString, QString> data;
-	QDateTime lastReadTime;
-	QDateTime lastCheckTime;
-};
-
-}
-
-class NotificationMonitorPrivate
-{
-	NotificationMonitor * const q_ptr;
-	Q_DECLARE_PUBLIC(NotificationMonitor)
-
-	/** The current set of monitored notifications, indexed by id. */
-	QMap<quint32, Notification*> _notifs;
-	/** Low level dbus connection used for sniffing. */
-	DBusConnection *_conn;
-	/** Serials of DBUS method calls of which we are expecting a reply. */
-	QHash<quint32, ProtoNotification> _pendingConfirmation;
-    /** Cache of notification category info. */
-    mutable QHash<QString, CategoryCacheEntry> _categoryCache;
-
-	NotificationMonitorPrivate(NotificationMonitor *q);
-	~NotificationMonitorPrivate();
-
-	void processIncomingNotification(quint32 id, const ProtoNotification &proto);
-	void processCloseNotification(quint32 id, quint32 reason);
-
-	void sendMessageWithString(const char *service, const char *path, const char *iface, const char *method, const char *arg);
-	void addMatchRule(const char *rule);
-	void removeMatchRule(const char *rule);
-
-	ProtoNotification parseNotifyCall(DBusMessage *msg) const;
-
-	QHash<QString,QString> getCategoryInfo(const QString &s) const;
-
-	static dbus_bool_t busWatchAdd(DBusWatch *watch, void *data);
-	static void busWatchRemove(DBusWatch *watch, void *data);
-	static void busWatchToggle(DBusWatch *watch, void *data);
-
-	static DBusHandlerResult busMessageFilter(DBusConnection *conn, DBusMessage *msg, void *user_data);
-
-	void handleBusSocketActivated();
-};
 
 NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
 	: q_ptr(q)
@@ -138,9 +76,11 @@ NotificationMonitorPrivate::~NotificationMonitorPrivate()
 		delete it.value();
 	}
 
+#if 0 /* No need to remove match rules since we're closing the connection. */
 	removeMatchRule("type='method_call',interface='org.freedesktop.Notifications',member='Notify',eavesdrop='true'");
 	removeMatchRule("type='method_return',sender='org.freedesktop.Notifications',eavesdrop='true'");
 	removeMatchRule("type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'");
+#endif
 
 	dbus_connection_remove_filter(_conn, busMessageFilter, this);
 
@@ -319,7 +259,7 @@ QHash<QString,QString> NotificationMonitorPrivate::getCategoryInfo(const QString
 	if (needs_check) {
 		QFileInfo finfo(QString("%1/%2.conf").arg(CATEGORY_DEFINITION_FILE_DIRECTORY, category));
 		if (finfo.exists()) {
-			CategoryCacheEntry &entry = _categoryCache[category];
+			NotificationCategoryCacheEntry &entry = _categoryCache[category];
 			if (!in_cache || finfo.lastModified() > entry.lastReadTime) {
 				QSettings settings(finfo.absoluteFilePath(), QSettings::IniFormat);
 				entry.data.clear();
@@ -367,7 +307,7 @@ dbus_bool_t NotificationMonitorPrivate::busWatchAdd(DBusWatch *watch, void *data
 	notifier->setProperty("dbus-watch", QVariant::fromValue<void*>(watch));
 
 	notifier->connect(notifier, SIGNAL(activated(int)),
-					  monitor, SLOT(handleBusSocketActivated()));
+					  self, SLOT(handleBusSocketActivated()));
 
 	return TRUE;
 }
