@@ -16,8 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NOTIFICATIONMONITOR_H
-#define NOTIFICATIONMONITOR_H
+#ifndef WATCHFISH_NOTIFICATIONMONITOR_H
+#define WATCHFISH_NOTIFICATIONMONITOR_H
 
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QMap>
@@ -52,4 +52,4 @@ private:
 
 }
 
-#endif // NOTIFICATIONMONITOR_H
+#endif // WATCHFISH_NOTIFICATIONMONITOR_H
