@@ -371,8 +371,7 @@ DBusHandlerResult NotificationMonitorPrivate::busMessageFilter(DBusConnection *c
 
 void NotificationMonitorPrivate::handleBusSocketActivated()
 {
-	Q_Q(NotificationMonitor);
-	QSocketNotifier *notifier = static_cast<QSocketNotifier*>(q->sender());
+	QSocketNotifier *notifier = static_cast<QSocketNotifier*>(sender());
 	DBusWatch *watch = static_cast<DBusWatch*>(notifier->property("dbus-watch").value<void*>());
 
 	dbus_watch_handle(watch, dbus_watch_get_flags(watch));
