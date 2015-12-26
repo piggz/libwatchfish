@@ -8,7 +8,10 @@ CONFIG += link_pkgconfig
 PKGCONFIG += dbus-1 timed-qt5
 
 HEADERS = notificationmonitor.h notificationmonitor_p.h notification.h \
-    walltimemonitor.h walltimemonitor_p.h
+    walltimemonitor.h walltimemonitor_p.h \
+    musiccontroller.h \
+    musiccontroller_p.h
 
 SOURCES = notificationmonitor.cpp notification.cpp \
-    walltimemonitor.cpp
+    walltimemonitor.cpp \
+    musiccontroller.cpp
