@@ -26,6 +26,8 @@
 namespace watchfish
 {
 
+Q_DECLARE_LOGGING_CATEGORY(walltimeMonitorCat)
+
 class WallTimeMonitorPrivate;
 
 class WallTimeMonitor : public QObject

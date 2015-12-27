@@ -19,10 +19,12 @@
 #ifndef WATCHFISH_MUSICCONTROLLER_H
 #define WATCHFISH_MUSICCONTROLLER_H
 
-#include <QtCore/QObject>
+#include <QtCore/QLoggingCategory>
 
 namespace watchfish
 {
+
+Q_DECLARE_LOGGING_CATEGORY(musicControllerCat)
 
 class MusicControllerPrivate;
 
@@ -30,10 +32,65 @@ class MusicController : public QObject
 {
 	Q_OBJECT
 	Q_DECLARE_PRIVATE(MusicController)
+	Q_ENUMS(Status)
 
 public:
 	explicit MusicController(QObject *parent = 0);
 	~MusicController();
+
+	enum Status {
+		StatusNoPlayer = 0,
+		StatusStopped,
+		StatusPaused,
+		StatusPlaying
+	};
+
+	enum RepeatStatus {
+		RepeatNone = 0,
+		RepeatTrack,
+		RepeatPlaylist
+	};
+
+	Status status() const;
+	QString service() const;
+
+	QVariantMap metadata() const;
+
+	QString title() const;
+	QString album() const;
+	QString artist() const;
+
+	QString albumArt() const;
+
+	int duration() const;
+
+	RepeatStatus repeat() const;
+	bool shuffle() const;
+
+	int volume() const;
+
+public slots:
+	void play();
+	void pause();
+	void playPause();
+	void next();
+	void previous();
+
+	void volumeUp();
+	void volumeDown();
+
+signals:
+	void statusChanged();
+	void serviceChanged();
+	void metadataChanged();
+	void titleChanged();
+	void albumChanged();
+	void artistChanged();
+	void albumArtChanged();
+	void durationChanged();
+	void repeatChanged();
+	void shuffleChanged();
+	void volumeChanged();
 
 private:
 	MusicControllerPrivate * const d_ptr;

@@ -28,6 +28,8 @@
 namespace watchfish
 {
 
+Q_DECLARE_LOGGING_CATEGORY(notificationMonitorCat)
+
 class NotificationMonitorPrivate;
 
 class NotificationMonitor : public QObject
