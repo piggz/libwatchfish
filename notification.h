@@ -35,8 +35,10 @@ class Notification : public QObject
 
 	/** Notification ID */
 	Q_PROPERTY(uint id READ id CONSTANT)
-	/** Name of sender program */
-	Q_PROPERTY(QString sender READ sender WRITE setSender NOTIFY senderChanged)
+	/** Binary/harbour name of sending program */
+	Q_PROPERTY(QString appId READ appId WRITE setAppId NOTIFY appIdChanged)
+	/** Human readable name of sender program */
+	Q_PROPERTY(QString appName READ appName WRITE setAppName NOTIFY appNameChanged)
 	Q_PROPERTY(QString summary READ summary WRITE setSummary NOTIFY summaryChanged)
 	Q_PROPERTY(QString body READ body WRITE setBody NOTIFY bodyChanged)
 	Q_PROPERTY(QDateTime timestamp READ timestamp WRITE setTimestamp NOTIFY timestampChanged)
@@ -66,8 +68,11 @@ public:
 
 	uint id() const;
 
-	QString sender() const;
-	void setSender(const QString &sender);
+	QString appId() const;
+	void setAppId(const QString &appId);
+
+	QString appName() const;
+	void setAppName(const QString &appName);
 
 	QString summary() const;
 	void setSummary(const QString &summary);
@@ -101,7 +106,8 @@ public slots:
 	void close();
 
 signals:
-	void senderChanged();
+	void appIdChanged();
+	void appNameChanged();
 	void summaryChanged();
 	void bodyChanged();
 	void timestampChanged();

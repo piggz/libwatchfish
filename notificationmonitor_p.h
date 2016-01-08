@@ -9,6 +9,9 @@
 #define CATEGORY_DEFINITION_FILE_DIRECTORY "/usr/share/lipstick/notificationcategories"
 #define CATEGORY_REFRESH_CHECK_TIME 120
 
+#define DESKTOP_FILE_DIRECTORY "/usr/share/applications"
+#define DESKTOP_REFRESH_CHECK_TIME 120
+
 namespace watchfish
 {
 
@@ -19,9 +22,17 @@ struct NotificationCategoryCacheEntry
 	QDateTime lastCheckTime;
 };
 
+struct AppNameCacheEntry
+{
+	QString name;
+	QDateTime lastReadTime;
+	QDateTime lastCheckTime;
+};
+
 struct ProtoNotification
 {
-	QString sender;
+	QString appId;
+	QString appName;
 	QString appIcon;
 	QString summary;
 	QString body;
@@ -55,6 +66,8 @@ private:
 
 	QHash<QString,QString> getCategoryInfo(const QString &s) const;
 
+	QString getAppName(const QString &id) const;
+
 	static dbus_bool_t busWatchAdd(DBusWatch *watch, void *data);
 	static void busWatchRemove(DBusWatch *watch, void *data);
 	static void busWatchToggle(DBusWatch *watch, void *data);
@@ -76,6 +89,8 @@ private:
 	QHash<quint32, ProtoNotification> _pendingConfirmation;
 	/** Cache of notification category info. */
 	mutable QHash<QString, NotificationCategoryCacheEntry> _categoryCache;
+	/** Cache of application names. */
+	mutable QHash<QString, AppNameCacheEntry> _appNameCache;
 };
 
 

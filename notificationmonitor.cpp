@@ -34,8 +34,9 @@ QDebug operator<<(QDebug &debug, const ProtoNotification &proto)
 {
 	QDebugStateSaver saver(debug);
 	Q_UNUSED(saver);
-	debug.nospace() << "Notification(sender=" << proto.sender << ", summary=" << proto.summary
-					<< ", body=" << proto.body << ", appIcon=" << proto.appIcon
+	debug.nospace() << "Notification(appId=" << proto.appId << ", appName=" << proto.appName
+					<< ", summary=" << proto.summary << ", body=" << proto.body
+					<< ", appIcon=" << proto.appIcon
 					<< ", hints=" << proto.hints << ", timeout=" << proto.expireTimeout
 					<< ", actions=" << proto.actions << ")";
 	return debug;
@@ -100,7 +101,7 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		n = new Notification(id, q);
 	}
 
-	n->setSender(proto.sender);
+    n->setAppId(proto.appId);
 	n->setSummary(proto.summary);
 	n->setBody(proto.body);
 	n->setIcon(proto.appIcon);
@@ -201,7 +202,7 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
 	dbus_message_iter_next(&iter);
 
 	// Add basic notification information
-	proto.sender = QString::fromUtf8(app_name);
+	proto.appName = QString::fromUtf8(app_name);
 	proto.appIcon = QString::fromUtf8(app_icon);
 	proto.summary = QString::fromUtf8(summary);
 	proto.body = QString::fromUtf8(body);
@@ -241,6 +242,19 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
 	dbus_message_iter_get_basic(&iter, &expire_timeout);
 	proto.expireTimeout = expire_timeout;
 
+	if (hints.contains("x-nemo-owner")) {
+		proto.appId = hints["x-nemo-owner"];
+		if (proto.appName.isEmpty()) {
+			// Lookup application name via .desktop file
+			proto.appName = getAppName(proto.appId);
+			// Otherwise just use the appId
+			if (proto.appName.isEmpty()) {
+				proto.appName = proto.appId;
+			}
+		}
+	}
+
+    // Lookup category info and merge it with the notification info if found.
 	if (hints.contains("category")) {
 		proto.hints = getCategoryInfo(hints["category"]);
 		proto.hints.unite(hints);
@@ -277,6 +291,32 @@ QHash<QString,QString> NotificationMonitorPrivate::getCategoryInfo(const QString
 		}
 	} else {
 		return _categoryCache[category].data;
+	}
+}
+
+QString NotificationMonitorPrivate::getAppName(const QString &id) const
+{
+	bool in_cache = _appNameCache.contains(id);
+	bool needs_check = !in_cache ||
+			_appNameCache[id].lastCheckTime.secsTo(QDateTime::currentDateTime()) > DESKTOP_REFRESH_CHECK_TIME;
+	if (needs_check) {
+		AppNameCacheEntry &entry = _appNameCache[id];
+		QFileInfo finfo(QString("%1/%2.desktop").arg(DESKTOP_FILE_DIRECTORY, id));
+		if (finfo.exists()) {
+			if (!in_cache || finfo.lastModified() > entry.lastReadTime) {
+				QSettings settings(finfo.absoluteFilePath(), QSettings::IniFormat);
+				settings.beginGroup("Desktop Entry");
+				entry.name = settings.value("Name").toString(); // TODO Localization
+				entry.lastReadTime = finfo.lastModified();
+			}
+		} else {
+			qCWarning(notificationMonitorCat) << "Desktop file for" << id << "does not exist";
+			// Cache negative results, since they might be common...
+		}
+		entry.lastCheckTime = QDateTime::currentDateTime();
+		return entry.name;
+	} else {
+		return _appNameCache[id].name;
 	}
 }
 
@@ -393,5 +433,3 @@ NotificationMonitor::~NotificationMonitor()
 }
 
 }
-
-#include "moc_notificationmonitor.cpp"

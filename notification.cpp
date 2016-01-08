@@ -39,7 +39,8 @@ struct Action
 struct NotificationPrivate
 {
 	uint id;
-	QString sender;
+	QString appId;
+	QString appName;
 	QString summary;
 	QString body;
 	QDateTime timestamp;
@@ -67,18 +68,33 @@ uint Notification::id() const
 	return d->id;
 }
 
-QString Notification::sender() const
+QString Notification::appId() const
 {
 	Q_D(const Notification);
-	return d->sender;
+	return d->appId;
 }
 
-void Notification::setSender(const QString &sender)
+void Notification::setAppId(const QString &appId)
 {
 	Q_D(Notification);
-	if (sender != d->sender) {
-		d->sender = sender;
-		emit senderChanged();
+	if (appId != d->appId) {
+		d->appId = appId;
+		emit appIdChanged();
+	}
+}
+
+QString Notification::appName() const
+{
+	Q_D(const Notification);
+	return d->appName;
+}
+
+void Notification::setAppName(const QString &appName)
+{
+	Q_D(Notification);
+	if (appName != d->appName) {
+		d->appName = appName;
+		emit appNameChanged();
 	}
 }
 
