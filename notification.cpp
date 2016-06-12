@@ -45,6 +45,7 @@ struct NotificationPrivate
 	QString body;
 	QDateTime timestamp;
 	QString icon;
+	QString category;
 	quint8 urgency;
 	bool transient;
 	QString previewSummary;
@@ -155,6 +156,21 @@ void Notification::setIcon(const QString &icon)
 	if (icon != d->icon) {
 		d->icon = icon;
 		emit iconChanged();
+	}
+}
+
+QString Notification::category() const
+{
+	Q_D(const Notification);
+	return d->category;
+}
+
+void Notification::setCategory(const QString &category)
+{
+	Q_D(Notification);
+	if (category != d->category) {
+		d->category = category;
+		emit categoryChanged();
 	}
 }
 

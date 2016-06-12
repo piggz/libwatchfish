@@ -44,6 +44,8 @@ class Notification : public QObject
 	Q_PROPERTY(QDateTime timestamp READ timestamp WRITE setTimestamp NOTIFY timestampChanged)
 	/** Icon file path */
 	Q_PROPERTY(QString icon READ icon WRITE setIcon NOTIFY iconChanged)
+	/** Category ID */
+	Q_PROPERTY(QString category READ category WRITE setCategory NOTIFY categoryChanged)
 	Q_PROPERTY(int urgency READ urgency WRITE setUrgency NOTIFY urgencyChanged)
 	Q_PROPERTY(bool transient READ transient WRITE setTransient NOTIFY transientChanged)
 
@@ -86,6 +88,9 @@ public:
 	QString icon() const;
 	void setIcon(const QString &icon);
 
+	QString category() const;
+	void setCategory(const QString &category);
+
 	int urgency() const;
 	void setUrgency(int urgency);
 
@@ -112,6 +117,7 @@ signals:
 	void bodyChanged();
 	void timestampChanged();
 	void iconChanged();
+	void categoryChanged();
 	void urgencyChanged();
 	void transientChanged();
 

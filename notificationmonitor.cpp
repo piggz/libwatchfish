@@ -114,6 +114,8 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		n->setTimestamp(QDateTime::currentDateTime());
 	}
 
+	n->setCategory(proto.hints.value("category"));
+
 	n->setPreviewSummary(proto.hints.value("x-nemo-preview-summary"));
 	n->setPreviewBody(proto.hints.value("x-nemo-preview-body"));
 
