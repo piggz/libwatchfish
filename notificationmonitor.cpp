@@ -101,7 +101,8 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		n = new Notification(id, q);
 	}
 
-    n->setAppId(proto.appId);
+	n->setAppId(proto.appId);
+	n->setAppName(proto.appName);
 	n->setSummary(proto.summary);
 	n->setBody(proto.body);
 	n->setIcon(proto.appIcon);

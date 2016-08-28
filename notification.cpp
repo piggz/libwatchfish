@@ -57,6 +57,8 @@ Notification::Notification(uint id, QObject *parent) : QObject(parent), d_ptr(ne
 {
 	Q_D(Notification);
 	d->id = id;
+	d->urgency = 0;
+	d->transient = false;
 }
 
 Notification::~Notification()

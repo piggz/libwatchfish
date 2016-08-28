@@ -23,3 +23,9 @@ contains(WATCHFISH_FEATURES, calendar) {
 	HEADERS += $$PWD/calendarsource.h $$PWD/calendarsource_p.h $$PWD/calendarevent.h
 	SOURCES += $$PWD/calendarsource.cpp $$PWD/calendarevent.cpp
 }
+
+contains(WATCHFISH_FEATURES, voicecall) {
+	HEADERS += $$PWD/voicecallcontroller.h $$PWD/voicecallcontroller_p.h
+	SOURCES += $$PWD/voicecallcontroller.cpp
+	DBUS_INTERFACES += org.nemomobile.voicecall.VoiceCallManager.xml org.nemomobile.voicecall.VoiceCall.xml
+}
