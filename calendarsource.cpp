@@ -94,11 +94,11 @@ QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate
 												 bool startInclusive, bool endInclusive)
 {
 	Q_D(CalendarSource);
-	int count = 0;
-	count += d->calendarStorage->loadRecurringIncidences();
+	int count;
+	count = d->calendarStorage->loadRecurringIncidences();
 	qCDebug(calendarSourceCat) << "Loaded" << count << "recurring events";
-	count += d->calendarStorage->load(start, end);
-	qCDebug(calendarSourceCat) << "Loaded" << count << "events total";
+	count = d->calendarStorage->load(start, end);
+	qCDebug(calendarSourceCat) << "Loaded" << count << "normal events";
 
 	QList<CalendarEvent> events;
 	QVector<mKCal::ExtendedCalendar::ExpandedIncidence> incidences = d->calendar->rawExpandedEvents(start, end, startInclusive, endInclusive);
