@@ -3,6 +3,7 @@
 
 #include <QSharedDataPointer>
 #include <QDateTime>
+#include <QMetaType>
 
 namespace watchfish
 {
