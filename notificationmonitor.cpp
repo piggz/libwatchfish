@@ -106,6 +106,7 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 	n->setSummary(proto.summary);
 	n->setBody(proto.body);
 	n->setIcon(proto.appIcon);
+	n->setTransient(proto.hints.value("transient", "false") == "true");
 
 	// Handle nemo specific stuff
 	QDateTime timestamp = QDateTime::fromString(proto.hints["x-nemo-timestamp"], Qt::ISODate);
