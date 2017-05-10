@@ -14,8 +14,8 @@ contains(WATCHFISH_FEATURES, walltime) {
 
 contains(WATCHFISH_FEATURES, music) {
 	PKGCONFIG += mpris-qt5
-	HEADERS += $$PWD/musiccontroller.h $$PWD/musiccontroller_p.h $$PWD/volumecontroller.h
-	SOURCES += $$PWD/musiccontroller.cpp $$PWD/volumecontroller.cpp
+	HEADERS += $$PWD/musiccontroller.h $$PWD/musiccontroller_p.h
+	SOURCES += $$PWD/musiccontroller.cpp
 	DBUS_INTERFACES += com.Meego.MainVolume2.xml
 }
 
@@ -31,8 +31,8 @@ contains(WATCHFISH_FEATURES, voicecall) {
 	DBUS_INTERFACES += org.nemomobile.voicecall.VoiceCallManager.xml org.nemomobile.voicecall.VoiceCall.xml
 }
 
-HEADERS += \
-    $$PWD/volumecontroller_p.h
-
-DISTFILES += \
-    $$PWD/com.Meego.MainVolume2.xml
+contains (WATCHFISH_FEATURES, volume) {
+	HEADERS += $$PWD/volumecontroller.h $$PWD/volumecontroller_p.h
+	SOURCES += $$PWD/volumecontroller.cpp
+	DBUS_INTERFACES += com.Meego.MainVolume2.xml
+}
