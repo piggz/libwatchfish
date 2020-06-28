@@ -43,6 +43,10 @@ public:
 	QString curArtist;
 	QString curAlbumArt;
 	int curDuration;
+    QDBusConnection *_pulseBus = nullptr;
+    uint _maxVolume = 0;
+
+    void connectPulseBus();
 
 private:
 	static QString stripAlbumArtComponent(const QString& component);

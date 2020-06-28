@@ -16,7 +16,7 @@ contains(WATCHFISH_FEATURES, music) {
 	PKGCONFIG += mpris-qt5
 	HEADERS += $$PWD/musiccontroller.h $$PWD/musiccontroller_p.h
 	SOURCES += $$PWD/musiccontroller.cpp
-	DBUS_INTERFACES += com.Meego.MainVolume2.xml
+        DBUS_INTERFACES += $$PWD/com.Meego.MainVolume2.xml
 }
 
 contains(WATCHFISH_FEATURES, calendar) {
