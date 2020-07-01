@@ -19,6 +19,9 @@
 #ifndef WATCHFISH_VOICECALLCONTROLLER_P_H
 #define WATCHFISH_VOICECALLCONTROLLER_P_H
 
+#include <QtContacts/QContactManager>
+#include <QtContacts/QContactDetailFilter>
+
 #include "voicecallcontroller.h"
 #include "voicecall_interface.h"
 #include "voicecallmanager_interface.h"
@@ -57,6 +60,9 @@ public:
 	bool curInCall;
 	bool curRinging;
 	QString curCallerId;
+
+    QtContacts::QContactManager *contacts;
+    QtContacts::QContactDetailFilter numberFilter;
 
 	void setCallStatus(VoiceCallStatus status);
 	void setCallerId(const QString &callerId);

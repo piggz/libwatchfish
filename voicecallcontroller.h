@@ -45,6 +45,9 @@ public:
 	bool ringing() const;
 
 	QString callerId() const;
+    void hangup();
+    void silence();
+    QString findPersonByNumber(const QString &number);
 
 signals:
 	void inCallChanged();

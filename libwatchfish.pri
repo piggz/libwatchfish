@@ -1,3 +1,4 @@
+QT += contacts
 CONFIG += link_pkgconfig
 
 contains(WATCHFISH_FEATURES, notificationmonitor) {
@@ -28,7 +29,7 @@ contains(WATCHFISH_FEATURES, calendar) {
 contains(WATCHFISH_FEATURES, voicecall) {
 	HEADERS += $$PWD/voicecallcontroller.h $$PWD/voicecallcontroller_p.h
 	SOURCES += $$PWD/voicecallcontroller.cpp
-	DBUS_INTERFACES += org.nemomobile.voicecall.VoiceCallManager.xml org.nemomobile.voicecall.VoiceCall.xml
+        DBUS_INTERFACES += $$PWD/org.nemomobile.voicecall.VoiceCallManager.xml $$PWD/org.nemomobile.voicecall.VoiceCall.xml
 }
 
 contains (WATCHFISH_FEATURES, volume) {
