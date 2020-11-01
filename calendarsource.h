@@ -46,7 +46,9 @@ signals:
 	void changed();
 
 private:
+#ifdef MER_EDITION_SAILFISH
 	CalendarSourcePrivate * const d_ptr;
+#endif
 };
 
 }

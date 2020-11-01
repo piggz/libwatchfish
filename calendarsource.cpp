@@ -17,12 +17,17 @@
  */
 
 #include "calendarsource.h"
+
+#ifdef MER_EDITION_SAILFISH
 #include "calendarsource_p.h"
+#endif
 
 namespace watchfish
 {
 
 Q_LOGGING_CATEGORY(calendarSourceCat, "watchfish-CalendarSource")
+
+#ifdef MER_EDITION_SAILFISH
 
 CalendarSourcePrivate::CalendarSourcePrivate(CalendarSource *q)
 	: calendar(new mKCal::ExtendedCalendar(KDateTime::Spec::LocalZone())),
@@ -80,10 +85,13 @@ CalendarEvent CalendarSourcePrivate::convertToEvent(const mKCal::ExtendedCalenda
 	return event;
 }
 
+
+
 CalendarSource::CalendarSource(QObject *parent)
 	: QObject(parent), d_ptr(new CalendarSourcePrivate(this))
 {
 }
+
 
 CalendarSource::~CalendarSource()
 {
@@ -109,5 +117,24 @@ QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate
 	qCDebug(calendarSourceCat) << "Returning" << events.size() << "events";
 	return events;
 }
+
+#else
+CalendarSource::CalendarSource(QObject *parent)
+    : QObject(parent)
+{
+
+}
+
+CalendarSource::~CalendarSource()
+{
+}
+
+QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate &end,
+                                                 bool startInclusive, bool endInclusive)
+{
+    QList<CalendarEvent> events;
+    return events;
+}
+#endif
 
 }

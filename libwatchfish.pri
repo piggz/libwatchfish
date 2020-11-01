@@ -1,4 +1,9 @@
-QT += contacts
+exists("/usr/lib/qt5/qml/Sailfish/Silica/SilicaGridView.qml"): {
+    DEFINES += MER_EDITION_SAILFISH
+    QT += contacts
+} else {
+    #QT += KContacts
+}
 CONFIG += link_pkgconfig
 
 contains(WATCHFISH_FEATURES, notificationmonitor) {
@@ -14,15 +19,23 @@ contains(WATCHFISH_FEATURES, walltime) {
 }
 
 contains(WATCHFISH_FEATURES, music) {
-	PKGCONFIG += mpris-qt5
+        PKGCONFIG += mpris-qt5
 	HEADERS += $$PWD/musiccontroller.h $$PWD/musiccontroller_p.h
 	SOURCES += $$PWD/musiccontroller.cpp
         DBUS_INTERFACES += $$PWD/com.Meego.MainVolume2.xml
 }
 
 contains(WATCHFISH_FEATURES, calendar) {
-	PKGCONFIG += libmkcal-qt5 libkcalcoren-qt5
-	HEADERS += $$PWD/calendarsource.h $$PWD/calendarsource_p.h $$PWD/calendarevent.h
+        exists("/usr/lib/qt5/qml/Sailfish/Silica/SilicaGridView.qml"): {
+            PKGCONFIG += libmkcal-qt5 libkcalcoren-qt5
+        } else {
+            QT += KContacts
+        }
+        contains (DEFINES, MER_EDITION_SAILFISH) {
+            HEADERS += $$PWD/calendarsource.h $$PWD/calendarsource_p.h $$PWD/calendarevent.h
+        } else {
+            HEADERS += $$PWD/calendarsource.h $$PWD/calendarevent.h
+        }
 	SOURCES += $$PWD/calendarsource.cpp $$PWD/calendarevent.cpp
 }
 
