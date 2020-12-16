@@ -1,9 +1,3 @@
-exists("/usr/lib/qt5/qml/Sailfish/Silica/SilicaGridView.qml"): {
-    DEFINES += MER_EDITION_SAILFISH
-    QT += contacts
-} else {
-    #QT += KContacts
-}
 CONFIG += link_pkgconfig
 
 contains(WATCHFISH_FEATURES, notificationmonitor) {
@@ -26,7 +20,7 @@ contains(WATCHFISH_FEATURES, music) {
 }
 
 contains(WATCHFISH_FEATURES, calendar) {
-        exists("/usr/lib/qt5/qml/Sailfish/Silica/SilicaGridView.qml"): {
+        equals(FLAVOR, "silica") {
             PKGCONFIG += libmkcal-qt5 libkcalcoren-qt5
         } else {
             QT += KContacts
