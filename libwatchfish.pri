@@ -1,4 +1,7 @@
 CONFIG += link_pkgconfig
+equals(FLAVOR, "silica") {
+    QT += contacts
+}
 
 contains(WATCHFISH_FEATURES, notificationmonitor) {
 	PKGCONFIG += dbus-1
