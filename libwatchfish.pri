@@ -26,7 +26,7 @@ contains(WATCHFISH_FEATURES, calendar) {
         equals(FLAVOR, "silica") {
             PKGCONFIG += libmkcal-qt5 libkcalcoren-qt5
         } else {
-            QT += KContacts
+            #QT += KContacts
         }
         contains (DEFINES, MER_EDITION_SAILFISH) {
             HEADERS += $$PWD/calendarsource.h $$PWD/calendarsource_p.h $$PWD/calendarevent.h
