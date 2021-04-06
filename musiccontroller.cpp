@@ -84,7 +84,7 @@ QString MusicControllerPrivate::findAlbumArt(const QString &artist, const QStrin
 													 QCryptographicHash::Md5).toHex();
 	QByteArray second_hash = QCryptographicHash::hash(stripAlbumArtComponent(album).toUtf8(),
 													  QCryptographicHash::Md5).toHex();
-	QString file = QString("album-%1-%2.jpeg").arg(first_hash.constData()).arg(second_hash.constData());
+    QString file = QString("album-%1-%2.jpeg").arg(first_hash.constData(), second_hash.constData());
 	qCDebug(musicControllerCat()) << "checking for albumart in" << file;
 	if (dir.exists(file)) {
 		return dir.absoluteFilePath(file);
@@ -92,7 +92,7 @@ QString MusicControllerPrivate::findAlbumArt(const QString &artist, const QStrin
 
 	// Now try with an empty artist name
 	first_hash = QCryptographicHash::hash(QString(" ").toUtf8(), QCryptographicHash::Md5).toHex();
-	file = QString("album-%1-%2.jpeg").arg(first_hash.constData()).arg(second_hash.constData());
+    file = QString("album-%1-%2.jpeg").arg(first_hash.constData(), second_hash.constData());
 	qCDebug(musicControllerCat()) << "checking for albumart in" << file;
 	if (dir.exists(file)) {
 		return dir.absoluteFilePath(file);

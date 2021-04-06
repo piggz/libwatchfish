@@ -39,7 +39,7 @@ public:
 	explicit CalendarSource(QObject *parent = 0);
 	~CalendarSource();
 
-	Q_INVOKABLE QList<CalendarEvent> fetchEvents(const QDate &start, const QDate &end,
+    Q_INVOKABLE QList<watchfish::CalendarEvent> fetchEvents(const QDate &start, const QDate &end,
 												 bool startInclusive = false, bool endInclusive = false);
 
 signals:

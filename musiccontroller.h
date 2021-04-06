@@ -32,7 +32,6 @@ class MusicController : public QObject
 {
 	Q_OBJECT
 	Q_DECLARE_PRIVATE(MusicController)
-	Q_ENUMS(Status)
 
 public:
 	explicit MusicController(QObject *parent = 0);
@@ -44,6 +43,7 @@ public:
 		StatusPaused,
 		StatusPlaying
 	};
+    Q_ENUM(Status)
 
 	enum RepeatStatus {
 		RepeatNone = 0,

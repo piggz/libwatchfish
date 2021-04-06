@@ -43,7 +43,7 @@ public:
 
 signals:
     /** Emitted when a notification arrives. */
-	void notification(Notification *n);
+    void notification(watchfish::Notification *n);
 
 private:
 	NotificationMonitorPrivate * const d_ptr;

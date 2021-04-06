@@ -55,7 +55,6 @@ class Notification : public QObject
 
 	Q_PROPERTY(QStringList actions READ actions NOTIFY actionsChanged)
 
-	Q_ENUMS(CloseReason)
 
 public:
 	explicit Notification(uint id, QObject *parent = 0);
@@ -67,6 +66,7 @@ public:
 		DismissedByProgram = 3,
 		ClosedOther = 4
 	};
+    Q_ENUM(CloseReason)
 
 	uint id() const;
 
@@ -126,7 +126,7 @@ signals:
 
 	void actionsChanged();
 
-	void closed(CloseReason reason);
+    void closed(watchfish::Notification::CloseReason reason);
 
 private:
 	NotificationPrivate * const d_ptr;
