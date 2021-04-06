@@ -65,7 +65,7 @@ class WallTimeMonitorPrivate : public QObject
 	Q_OBJECT
 
 public:
-	WallTimeMonitorPrivate(WallTimeMonitor *q);
+    explicit WallTimeMonitorPrivate(WallTimeMonitor *q);
 	~WallTimeMonitorPrivate();
 
 	Maemo::Timed::WallClock::Info info;

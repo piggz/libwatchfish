@@ -46,7 +46,7 @@ class NotificationMonitorPrivate : public QObject
 	Q_OBJECT
 
 public:
-	NotificationMonitorPrivate(NotificationMonitor *q);
+    explicit NotificationMonitorPrivate(NotificationMonitor *q);
 	~NotificationMonitorPrivate();
 
 private:
