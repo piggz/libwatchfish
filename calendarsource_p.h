@@ -40,7 +40,13 @@ public:
 	void storageProgress(mKCal::ExtendedStorage *storage, const QString &info) Q_DECL_OVERRIDE;
 	void storageFinished(mKCal::ExtendedStorage *storage, bool error, const QString &info) Q_DECL_OVERRIDE;
 
-	static CalendarEvent convertToEvent(const mKCal::ExtendedCalendar::ExpandedIncidence &expanded);
+    static CalendarEvent convertToEvent(
+        #ifdef KF5CALENDARCORE
+            const KCalendarCore::Incidence::Ptr &incidence
+        #else
+            const KCalCore::Incidence::Ptr &incidence
+        #endif
+        , const QDateTime &startDate, const QDateTime &endDate);
 
 private:
 	CalendarSource * const q_ptr;

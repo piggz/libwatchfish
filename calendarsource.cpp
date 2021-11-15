@@ -18,8 +18,12 @@
 
 #include "calendarsource.h"
 
+#include <QDateTime>
+
 #ifdef MER_EDITION_SAILFISH
 #include "calendarsource_p.h"
+#include <KCalendarCore/OccurrenceIterator>
+#include <KCalendarCore/Event>
 #endif
 
 namespace watchfish
@@ -72,20 +76,18 @@ void CalendarSourcePrivate::storageFinished(mKCal::ExtendedStorage *storage, boo
 	// Nothing to do
 }
 
-CalendarEvent CalendarSourcePrivate::convertToEvent(const mKCal::ExtendedCalendar::ExpandedIncidence &expanded)
-{
+CalendarEvent CalendarSourcePrivate::convertToEvent(
 #ifdef KF5CALENDARCORE
-	const KCalendarCore::Incidence::Ptr &incidence = expanded.second;
+    const KCalendarCore::Incidence::Ptr &incidence
 #else
-	const KCalCore::Incidence::Ptr &incidence = expanded.second;
+    const KCalCore::Incidence::Ptr &incidence
 #endif
+, const QDateTime &startDate, const QDateTime &endDate) {
 	CalendarEvent event;
 
 	event.setUid(incidence->uid());
-
-	event.setStart(expanded.first.dtStart);
-	event.setEnd(expanded.first.dtEnd);
-
+    event.setStart(startDate);
+    event.setEnd(endDate);
 	event.setAllDay(incidence->allDay());
 	event.setTitle(incidence->summary());
 	event.setLocation(incidence->location());
@@ -117,10 +119,15 @@ QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate
 	qCDebug(calendarSourceCat) << "Loaded" << count << "normal events";
 
 	QList<CalendarEvent> events;
-	QVector<mKCal::ExtendedCalendar::ExpandedIncidence> incidences = d->calendar->rawExpandedEvents(start, end, startInclusive, endInclusive);
-	Q_FOREACH(const mKCal::ExtendedCalendar::ExpandedIncidence &expanded, incidences) {
-		events.append(d->convertToEvent(expanded));
-	}
+
+    KCalendarCore::OccurrenceIterator it(*d->calendar, QDateTime(start), QDateTime(end));
+    while (it.hasNext()) {
+        it.next();
+        if (!d->calendar->isVisible(it.incidence()) || it.incidence()->type() != KCalendarCore::IncidenceBase::TypeEvent) {
+            continue;
+        }
+        events.append(d->convertToEvent(it.incidence(), it.occurrenceStartDate(), it.occurrenceStartDate())); //!TODO end date is newer api
+    }
 
 	qCDebug(calendarSourceCat) << "Returning" << events.size() << "events";
 	return events;
