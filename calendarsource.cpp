@@ -88,6 +88,12 @@ CalendarEvent CalendarSourcePrivate::convertToEvent(
 	event.setUid(incidence->uid());
     event.setStart(startDate);
     event.setEnd(endDate);
+	auto alarmList = incidence->alarms();
+	if (!alarmList.empty() && alarmList[0]->enabled()) {
+		QDateTime nextAlarm = alarmList[0]->nextRepetition(QDateTime::currentDateTime());
+		if (nextAlarm.isValid())
+			event.setAlertTime(nextAlarm);
+	}
 	event.setAllDay(incidence->allDay());
 	event.setTitle(incidence->summary());
 	event.setLocation(incidence->location());

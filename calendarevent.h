@@ -17,6 +17,7 @@ class CalendarEvent
 	Q_PROPERTY(QString uid READ uid WRITE setUid)
 	Q_PROPERTY(QDateTime start READ start WRITE setStart)
 	Q_PROPERTY(QDateTime end READ end WRITE setEnd)
+	Q_PROPERTY(QDateTime alertTime READ alertTime WRITE setAlertTime)
 	Q_PROPERTY(QString title READ title WRITE setTitle)
 	Q_PROPERTY(QString location READ location WRITE setLocation)
 	Q_PROPERTY(QString description READ description WRITE setDescription)
@@ -36,6 +37,9 @@ public:
 
 	QDateTime end() const;
 	void setEnd(const QDateTime &end);
+
+	QDateTime alertTime() const;
+	void setAlertTime(const QDateTime &alertTime);
 
 	QString title() const;
 	void setTitle(const QString &v);

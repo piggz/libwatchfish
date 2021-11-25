@@ -8,6 +8,7 @@ struct CalendarEventData : public QSharedData
 	QString uid;
 	QDateTime start;
 	QDateTime end;
+	QDateTime alertTime;
 	QString title;
 	QString location;
 	QString description;
@@ -67,6 +68,18 @@ void CalendarEvent::setEnd(const QDateTime &v)
 {
 	if (data->end != v) {
 		data->end = v;
+	}
+}
+
+QDateTime CalendarEvent::alertTime() const
+{
+	return data->alertTime;
+}
+
+void CalendarEvent::setAlertTime(const QDateTime &v)
+{
+	if (data->alertTime != v) {
+		data->alertTime = v;
 	}
 }
 
