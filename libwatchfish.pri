@@ -24,7 +24,7 @@ contains(WATCHFISH_FEATURES, music) {
 
 contains(WATCHFISH_FEATURES, calendar) {
         equals(FLAVOR, "silica") {
-            PKGCONFIG += libmkcal-qt5 libkcalcoren-qt5
+            PKGCONFIG += libmkcal-qt5
             exists( /usr/include/KF5/KCalendarCore ) {
                 PKGCONFIG += KF5CalendarCore
                 DEFINES += KF5CALENDARCORE
