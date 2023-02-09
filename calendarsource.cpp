@@ -53,6 +53,29 @@ CalendarSourcePrivate::~CalendarSourcePrivate()
 	calendarStorage->unregisterObserver(this);
 }
 
+void CalendarSourcePrivate::storageModified(mKCal::ExtendedStorage *storage, const QString &info)
+{
+	Q_Q(CalendarSource);
+	Q_UNUSED(storage);
+	qCDebug(calendarSourceCat) << "Storage modified:" << info;
+	emit q->changed();
+}
+
+void CalendarSourcePrivate::storageProgress(mKCal::ExtendedStorage *storage, const QString &info)
+{
+	Q_UNUSED(storage);
+	Q_UNUSED(info);
+	// Nothing to do
+}
+
+void CalendarSourcePrivate::storageFinished(mKCal::ExtendedStorage *storage, bool error, const QString &info)
+{
+	Q_UNUSED(storage);
+	Q_UNUSED(error);
+	Q_UNUSED(info);
+	// Nothing to do
+}
+
 CalendarEvent CalendarSourcePrivate::convertToEvent(
 #ifdef KF5CALENDARCORE
     const KCalendarCore::Incidence::Ptr &incidence

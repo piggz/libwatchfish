@@ -36,6 +36,10 @@ public:
 	mKCal::ExtendedCalendar::Ptr calendar;
 	mKCal::ExtendedStorage::Ptr calendarStorage;
 
+	void storageModified(mKCal::ExtendedStorage *storage, const QString &info) Q_DECL_OVERRIDE;
+	void storageProgress(mKCal::ExtendedStorage *storage, const QString &info) Q_DECL_OVERRIDE;
+	void storageFinished(mKCal::ExtendedStorage *storage, bool error, const QString &info) Q_DECL_OVERRIDE;
+
     static CalendarEvent convertToEvent(
         #ifdef KF5CALENDARCORE
             const KCalendarCore::Incidence::Ptr &incidence
