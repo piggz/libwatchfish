@@ -41,9 +41,20 @@ contains(WATCHFISH_FEATURES, calendar) {
 }
 
 contains(WATCHFISH_FEATURES, voicecall) {
-	HEADERS += $$PWD/voicecallcontroller.h $$PWD/voicecallcontroller_p.h
-	SOURCES += $$PWD/voicecallcontroller.cpp
-        DBUS_INTERFACES += $$PWD/org.nemomobile.voicecall.VoiceCallManager.xml $$PWD/org.nemomobile.voicecall.VoiceCall.xml
+
+	equals(FLAVOR, "silica") {
+		HEADERS += $$PWD/voicecallcontroller_sailfish.h $$PWD/voicecallcontroller.h $$PWD/voicecallcontroller_p.h
+		SOURCES += $$PWD/voicecallcontroller_sailfish.cpp
+		DBUS_INTERFACES += $$PWD/org.nemomobile.voicecall.VoiceCallManager.xml $$PWD/org.nemomobile.voicecall.VoiceCall.xml
+		DEFINES += MER_EDITION_SAILFISH
+	} else {
+		HEADERS += $$PWD/voicecallcontroller.h $$PWD/voicecallcontroller_ubuntu.h $$PWD/callchannelobserver.h
+		SOURCES += $$PWD/voicecallcontroller_ubuntu.cpp $$PWD/callchannelobserver.cpp
+		INCLUDEPATH += /usr/include/telepathy-qt5/
+		LIBS += -ltelepathy-qt5
+		QT += contacts
+		DEFINES += UUITK_EDITION
+	}
 }
 
 contains (WATCHFISH_FEATURES, volume) {

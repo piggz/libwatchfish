@@ -186,4 +186,5 @@ QString VoiceCallController::findPersonByNumber(const QString &number)
     return person;
 }
 
-}
+} // namespace
+

@@ -19,45 +19,11 @@
 #ifndef WATCHFISH_VOICECALLCONTROLLER_H
 #define WATCHFISH_VOICECALLCONTROLLER_H
 
-#include <QtCore/QLoggingCategory>
+#if defined(UUITK_EDITION)
+    #include "voicecallcontroller_ubuntu.h"
+#elif defined(MER_EDITION_SAILFISH)
+    #include "voicecallcontroller_sailfish.h"
+#endif
 
-namespace watchfish
-{
-
-Q_DECLARE_LOGGING_CATEGORY(voiceCallControllerCat)
-
-class VoiceCallControllerPrivate;
-
-class VoiceCallController : public QObject
-{
-	Q_OBJECT
-	Q_DECLARE_PRIVATE(VoiceCallController)
-
-	Q_PROPERTY(bool inCall READ inCall NOTIFY inCallChanged)
-	Q_PROPERTY(bool ringing READ ringing NOTIFY ringingChanged)
-	Q_PROPERTY(QString callerId READ callerId NOTIFY callerIdChanged)
-
-public:
-	explicit VoiceCallController(QObject *parent = 0);
-	~VoiceCallController();
-
-	bool inCall() const;
-	bool ringing() const;
-
-	QString callerId() const;
-    void hangup();
-    void silence();
-    QString findPersonByNumber(const QString &number);
-
-signals:
-	void inCallChanged();
-	void ringingChanged();
-	void callerIdChanged();
-
-private:
-	VoiceCallControllerPrivate * const d_ptr;
-};
-
-}
 
 #endif // WATCHFISH_VOICECALLCONTROLLER_H
