@@ -41,6 +41,7 @@ public:
     TelepathyMonitor(QObject *parent = 0);
 
     void hangupCall(uint cookie);
+    void accept(uint cookie);
 
 private slots:
     void accountManagerSetup();

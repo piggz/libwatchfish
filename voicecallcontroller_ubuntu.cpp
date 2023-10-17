@@ -66,10 +66,16 @@ bool VoiceCallController::ringing() const {
 QString VoiceCallController::callerId() const {
     return m_callerId;
 }
-
-
 void VoiceCallController::silence() {
     qWarning() << "not implemented";
+}
+
+void VoiceCallController::answer() {
+    m_telepathyMonitor->accept(m_lastCookie);
+    m_ringing = false;
+    m_inCall = true;
+    emit inCallChanged();
+    emit ringingChanged();
 }
 
 void VoiceCallController::hangup() {

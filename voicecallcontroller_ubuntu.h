@@ -46,6 +46,7 @@ public:
     QString callerId() const;
     void hangup();
     void silence();
+    void answer();
     QString findPersonByNumber(const QString &number);
 
 signals:

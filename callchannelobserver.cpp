@@ -27,6 +27,13 @@ void TelepathyMonitor::hangupCall(uint cookie)
     }
 }
 
+void TelepathyMonitor::accept(uint cookie) {
+    if (m_currentCalls.contains(cookie)) {
+        m_currentCalls.value(cookie)->accept();
+    }
+}
+
+
 void TelepathyMonitor::accountManagerSetup()
 {
     m_accountManager = Tp::AccountManager::create(Tp::AccountFactory::create(QDBusConnection::sessionBus(),

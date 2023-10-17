@@ -155,6 +155,16 @@ QString VoiceCallController::callerId() const
     return d->curCallerId;
 }
 
+void VoiceCallController::answer()
+{
+    Q_D(VoiceCallController);
+    qDebug() << Q_FUNC_INFO;
+    if (d->activeCall) {
+        d->activeCall->asyncCall("answer");
+    }
+}
+
+
 void VoiceCallController::hangup()
 {
     Q_D(VoiceCallController);
@@ -170,6 +180,7 @@ void VoiceCallController::silence()
     qDebug() << Q_FUNC_INFO;
     d->vcm->asyncCall("silenceRingtone");
 }
+
 
 QString VoiceCallController::findPersonByNumber(const QString &number)
 {
