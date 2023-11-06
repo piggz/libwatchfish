@@ -16,10 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QMessageLogger>
 #include <QtCore/QSettings>
 #include <QtCore/QSocketNotifier>
+#include <QRegularExpression>
 
 #include "notification.h"
 #include "notificationmonitor.h"
@@ -258,6 +260,16 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
 		}
 	}
 
+#ifdef UUITK_EDITION
+	proto.appId = proto.appName;
+	proto.appName = getAppName(proto.appId);
+	if (proto.appName.isEmpty()) {
+		proto.appName = proto.appId;
+	}
+
+#endif
+
+
     // Lookup category info and merge it with the notification info if found.
 	if (hints.contains("category")) {
 		proto.hints = getCategoryInfo(hints["category"]);
@@ -305,7 +317,12 @@ QString NotificationMonitorPrivate::getAppName(const QString &id) const
 			_appNameCache[id].lastCheckTime.secsTo(QDateTime::currentDateTime()) > DESKTOP_REFRESH_CHECK_TIME;
 	if (needs_check) {
 		AppNameCacheEntry &entry = _appNameCache[id];
+#ifdef UUITK_EDITION
+		QString new_id = guessAppId(id);
+		QFileInfo finfo(QString("%1/%2.desktop").arg(DESKTOP_FILE_DIRECTORY, new_id));
+#else
 		QFileInfo finfo(QString("%1/%2.desktop").arg(DESKTOP_FILE_DIRECTORY, id));
+#endif
 		if (finfo.exists()) {
 			if (!in_cache || finfo.lastModified() > entry.lastReadTime) {
 				QSettings settings(finfo.absoluteFilePath(), QSettings::IniFormat);
@@ -322,6 +339,22 @@ QString NotificationMonitorPrivate::getAppName(const QString &id) const
 	} else {
 		return _appNameCache[id].name;
 	}
+}
+
+QString NotificationMonitorPrivate::guessAppId(const QString &id) const
+{
+    QDir directory(DESKTOP_FILE_DIRECTORY);
+
+    QString pattern = QRegularExpression::wildcardToRegularExpression(QString("%1_*.desktop").arg(id));
+    QRegularExpression regex(pattern, QRegularExpression::CaseInsensitiveOption);
+
+    foreach (const QString &fileName, directory.entryList()) {
+        if (regex.match(fileName).hasMatch()) {
+            QString extractedId = fileName.left(fileName.length() - QString(".desktop").length());
+            return extractedId;
+        }
+    }
+    return id;
 }
 
 dbus_bool_t NotificationMonitorPrivate::busWatchAdd(DBusWatch *watch, void *data)
