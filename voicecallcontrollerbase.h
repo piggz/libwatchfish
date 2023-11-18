@@ -16,42 +16,47 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef WATCHFISH_VOICECALLCONTROLLER_SAILFISH_H
-#define WATCHFISH_VOICECALLCONTROLLER_SAILFISH_H
+#ifndef WATCHFISH_VOICECALLCONTROLLER_BASE_H
+#define WATCHFISH_VOICECALLCONTROLLER_BASE_H
 
+#include <QObject>
+#include <QString>
 #include <QtCore/QLoggingCategory>
-#include "voicecallcontrollerbase.h"
 
 namespace watchfish
 {
 
 Q_DECLARE_LOGGING_CATEGORY(voiceCallControllerCat)
 
-class VoiceCallControllerPrivate;
-
-class VoiceCallController : public VoiceCallControllerBase
+class VoiceCallControllerBase : public QObject
 {
-	Q_OBJECT
-	Q_DECLARE_PRIVATE(VoiceCallController)
+        Q_OBJECT
+
+        Q_PROPERTY(bool inCall READ inCall NOTIFY inCallChanged)
+        Q_PROPERTY(bool ringing READ ringing NOTIFY ringingChanged)
+        Q_PROPERTY(QString callerId READ callerId NOTIFY callerIdChanged)
 
 public:
-	explicit VoiceCallController(QObject *parent = 0);
-	~VoiceCallController();
+        explicit VoiceCallControllerBase(QObject *parent = 0);
+        ~VoiceCallControllerBase();
 
-    virtual bool inCall() const override;
-    virtual bool ringing() const override;
-    virtual QString callerId() const override;
+        virtual bool inCall() const;
+        virtual bool ringing() const;
 
-    virtual void hangup() override;
-    virtual void silence() override;
-    virtual void answer() override;
-    virtual QString findPersonByNumber(const QString &number) override;
+        virtual QString callerId() const;
 
-private:
-	VoiceCallControllerPrivate * const d_ptr;
+        virtual void hangup();
+        virtual void silence();
+        virtual void answer();
+        virtual QString findPersonByNumber(const QString &number);
+
+signals:
+        void inCallChanged();
+        void ringingChanged();
+        void callerIdChanged();
+
 };
 
 } // namespace
 
-
-#endif // WATCHFISH_VOICECALLCONTROLLER_H
+#endif // WATCHFISH_VOICECALLCONTROLLER_BASE_H

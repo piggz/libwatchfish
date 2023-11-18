@@ -18,6 +18,7 @@
 
 #include "voicecallcontroller.h"
 #include "callchannelobserver.h"
+#include "voicecallcontrollerbase.h"
 
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
@@ -26,7 +27,7 @@
 namespace watchfish
 {
 
-VoiceCallController::VoiceCallController(QObject *parent): QObject(parent)
+VoiceCallController::VoiceCallController(QObject *parent): VoiceCallControllerBase(parent)
 {
 
     // Calls
@@ -65,9 +66,6 @@ bool VoiceCallController::ringing() const {
 
 QString VoiceCallController::callerId() const {
     return m_callerId;
-}
-void VoiceCallController::silence() {
-    qWarning() << "not implemented";
 }
 
 void VoiceCallController::answer() {

@@ -21,6 +21,7 @@
 
 #include <QtCore/QLoggingCategory>
 #include <TelepathyQt/AbstractClientObserver>
+#include "voicecallcontrollerbase.h"
 
 class TelepathyMonitor;
 
@@ -28,33 +29,24 @@ namespace watchfish
 {
 
 
-class VoiceCallController : public QObject
+class VoiceCallController : public VoiceCallControllerBase
 {
     Q_OBJECT
-
-    Q_PROPERTY(bool inCall READ inCall NOTIFY inCallChanged)
-    Q_PROPERTY(bool ringing READ ringing NOTIFY ringingChanged)
-    Q_PROPERTY(QString callerId READ callerId NOTIFY callerIdChanged)
 
 public:
     VoiceCallController(QObject *parent = 0);
     void hangupCall(uint cookie);
 
-    bool inCall() const;
-    bool ringing() const;
+    virtual bool inCall() const override;
+    virtual bool ringing() const override;
 
-    QString callerId() const;
-    void hangup();
-    void silence();
-    void answer();
-    QString findPersonByNumber(const QString &number);
+    virtual QString callerId() const override;
+    virtual void hangup() override;
+//    virtual void silence() override;
+    virtual void answer() override;
+    virtual QString findPersonByNumber(const QString &number) override;
 
-signals:
-    void inCallChanged();
-    void ringingChanged();
-    void callerIdChanged();
-
-public slots:
+private slots:
     void incomingCall(uint cookie, const QString &number, const QString &name);
     void callStarted(uint cookie);
     void callEnded(uint cookie, bool missed);

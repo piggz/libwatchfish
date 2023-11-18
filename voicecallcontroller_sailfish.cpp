@@ -18,6 +18,8 @@
 
 #include "voicecallcontroller.h"
 #include "voicecallcontroller_p.h"
+#include "voicecallcontrollerbase.h"
+
 #include <QtContacts/QContactManager>
 #include <QtContacts/QContactDetailFilter>
 #include <QtContacts/QContactPhoneNumber>
@@ -128,7 +130,7 @@ void VoiceCallControllerPrivate::setCallerId(const QString &callerId)
 }
 
 VoiceCallController::VoiceCallController(QObject *parent)
-    : QObject(parent), d_ptr(new VoiceCallControllerPrivate(this))
+    : VoiceCallControllerBase(parent), d_ptr(new VoiceCallControllerPrivate(this))
 {
 }
 
