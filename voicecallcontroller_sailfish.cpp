@@ -18,6 +18,8 @@
 
 #include "voicecallcontroller.h"
 #include "voicecallcontroller_p.h"
+#include "voicecallcontrollerbase.h"
+
 #include <QtContacts/QContactManager>
 #include <QtContacts/QContactDetailFilter>
 #include <QtContacts/QContactPhoneNumber>
@@ -128,7 +130,7 @@ void VoiceCallControllerPrivate::setCallerId(const QString &callerId)
 }
 
 VoiceCallController::VoiceCallController(QObject *parent)
-    : QObject(parent), d_ptr(new VoiceCallControllerPrivate(this))
+    : VoiceCallControllerBase(parent), d_ptr(new VoiceCallControllerPrivate(this))
 {
 }
 
@@ -155,6 +157,16 @@ QString VoiceCallController::callerId() const
     return d->curCallerId;
 }
 
+void VoiceCallController::answer()
+{
+    Q_D(VoiceCallController);
+    qDebug() << Q_FUNC_INFO;
+    if (d->activeCall) {
+        d->activeCall->asyncCall("answer");
+    }
+}
+
+
 void VoiceCallController::hangup()
 {
     Q_D(VoiceCallController);
@@ -171,6 +183,7 @@ void VoiceCallController::silence()
     d->vcm->asyncCall("silenceRingtone");
 }
 
+
 QString VoiceCallController::findPersonByNumber(const QString &number)
 {
     Q_D(VoiceCallController);
@@ -186,4 +199,5 @@ QString VoiceCallController::findPersonByNumber(const QString &number)
     return person;
 }
 
-}
+} // namespace
+

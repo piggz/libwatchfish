@@ -16,14 +16,42 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef WATCHFISH_VOICECALLCONTROLLER_H
-#define WATCHFISH_VOICECALLCONTROLLER_H
+#ifndef WATCHFISH_VOICECALLCONTROLLER_SAILFISH_H
+#define WATCHFISH_VOICECALLCONTROLLER_SAILFISH_H
 
-#if defined(UUITK_EDITION)
-    #include "voicecallcontroller_ubuntu.h"
-#elif defined(MER_EDITION_SAILFISH)
-    #include "voicecallcontroller_sailfish.h"
-#endif
+#include <QtCore/QLoggingCategory>
+#include "voicecallcontrollerbase.h"
+
+namespace watchfish
+{
+
+Q_DECLARE_LOGGING_CATEGORY(voiceCallControllerCat)
+
+class VoiceCallControllerPrivate;
+
+class VoiceCallController : public VoiceCallControllerBase
+{
+	Q_OBJECT
+	Q_DECLARE_PRIVATE(VoiceCallController)
+
+public:
+	explicit VoiceCallController(QObject *parent = 0);
+	~VoiceCallController();
+
+    virtual bool inCall() const override;
+    virtual bool ringing() const override;
+    virtual QString callerId() const override;
+
+    virtual void hangup() override;
+    virtual void silence() override;
+    virtual void answer() override;
+    virtual QString findPersonByNumber(const QString &number) override;
+
+private:
+	VoiceCallControllerPrivate * const d_ptr;
+};
+
+} // namespace
 
 
 #endif // WATCHFISH_VOICECALLCONTROLLER_H
