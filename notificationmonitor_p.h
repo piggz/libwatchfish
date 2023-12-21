@@ -9,7 +9,13 @@
 #define CATEGORY_DEFINITION_FILE_DIRECTORY "/usr/share/lipstick/notificationcategories"
 #define CATEGORY_REFRESH_CHECK_TIME 120
 
-#define DESKTOP_FILE_DIRECTORY "/usr/share/applications"
+
+#if defined(UUITK_EDITION)
+    #define DESKTOP_FILE_DIRECTORY "/home/phablet/.local/share/applications"
+#else // defined(MER_EDITION_SAILFISH) // and others
+    #define DESKTOP_FILE_DIRECTORY "/usr/share/applications"
+#endif
+
 #define DESKTOP_REFRESH_CHECK_TIME 120
 
 namespace watchfish
@@ -67,6 +73,7 @@ private:
 	QHash<QString,QString> getCategoryInfo(const QString &s) const;
 
 	QString getAppName(const QString &id) const;
+	QString guessAppId(const QString &id) const;
 
 	static dbus_bool_t busWatchAdd(DBusWatch *watch, void *data);
 	static void busWatchRemove(DBusWatch *watch, void *data);
