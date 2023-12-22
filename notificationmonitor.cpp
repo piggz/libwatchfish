@@ -343,6 +343,7 @@ QString NotificationMonitorPrivate::getAppName(const QString &id) const
 
 QString NotificationMonitorPrivate::guessAppId(const QString &id) const
 {
+#ifdef UUITK_EDITION
     QDir directory(DESKTOP_FILE_DIRECTORY);
 
     QString pattern = QRegularExpression::wildcardToRegularExpression(QString("%1_*.desktop").arg(id));
@@ -354,6 +355,7 @@ QString NotificationMonitorPrivate::guessAppId(const QString &id) const
             return extractedId;
         }
     }
+#endif
     return id;
 }
 

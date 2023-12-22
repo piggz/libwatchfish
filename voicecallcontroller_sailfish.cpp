@@ -27,8 +27,6 @@
 namespace watchfish
 {
 
-Q_LOGGING_CATEGORY(voiceCallControllerCat, "watchfish-VoiceCallController")
-
 VoiceCallControllerPrivate::VoiceCallControllerPrivate(VoiceCallController *q)
     : vcm(new OrgNemomobileVoicecallVoiceCallManagerInterface("org.nemomobile.voicecall",
                                                               "/", QDBusConnection::sessionBus(), this)),
