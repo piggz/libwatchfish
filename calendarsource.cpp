@@ -119,8 +119,6 @@ QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate
 {
 	Q_D(CalendarSource);
 	int count;
-	count = d->calendarStorage->loadRecurringIncidences();
-	qCDebug(calendarSourceCat) << "Loaded" << count << "recurring events";
 	count = d->calendarStorage->load(start, end);
 	qCDebug(calendarSourceCat) << "Loaded" << count << "normal events";
 
