@@ -19,6 +19,8 @@
 #ifndef WATCHFISH_CALENDARSOURCE_P_H
 #define WATCHFISH_CALENDARSOURCE_P_H
 
+#ifdef MER_EDITION_SAILFISH // it seems cmake automoc is trying to compile anyway
+
 #include <extendedstorage.h>
 #include "calendarsource.h"
 
@@ -54,5 +56,7 @@ private:
 };
 
 }
+
+#endif // MER_EDITION_SAILFISH
 
 #endif // WATCHFISH_CALENDARSOURCE_P_H

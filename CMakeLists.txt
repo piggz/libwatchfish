@@ -87,9 +87,7 @@ if(WATCHFISH_FEATURES MATCHES "calendar")
             pkg_check_modules(KF5CalendarCore REQUIRED KF5CalendarCore)
             target_compile_definitions(libwatchfish PUBLIC KF5CALENDARCORE)
         endif()
-    endif()
 
-    if(MER_EDITION_SAILFISH)
         list(APPEND HEADERS
             calendarsource.h
             calendarsource_p.h
