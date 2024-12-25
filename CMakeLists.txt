@@ -82,10 +82,14 @@ endif()
 if(WATCHFISH_FEATURES MATCHES "calendar")
     if(FLAVOR STREQUAL "silica")
         pkg_check_modules(LIBMKCAL REQUIRED libmkcal-qt5)
+        target_include_directories(libwatchfish PUBLIC ${LIBMKCAL_INCLUDE_DIRS})
+        target_link_libraries(libwatchfish PUBLIC ${LIBMKCAL_LIBRARIES})
 
-        if(EXISTS /usr/include/KF5/KCalendarCore)
-            pkg_check_modules(KF5CalendarCore REQUIRED KF5CalendarCore)
-            target_compile_definitions(libwatchfish PUBLIC KF5CALENDARCORE)
+        if(EXISTS /usr/include/KF5/KCalendarCore/)
+            pkg_check_modules(KF5CALENDARCORE REQUIRED KF5CalendarCore)
+            target_include_directories(libwatchfish PUBLIC ${KF5CALENDARCORE_INCLUDE_DIRS})
+            target_link_libraries(libwatchfish PUBLIC ${KF5CALENDARCORE_LIBRARIES})
+            add_definitions(-DKF5CALENDARCORE)
         endif()
 
         list(APPEND HEADERS
