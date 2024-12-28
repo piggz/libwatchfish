@@ -16,14 +16,14 @@ find_package(PkgConfig REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core DBus)
 
 # Link with Qt5 DBus
-target_include_directories(libwatchfish PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(libwatchfish PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+#target_include_directories(libwatchfish PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(libwatchfish PUBLIC Qt5::Core Qt5::DBus)
 
 # Collect source files based on features
 set(SOURCES)
 set(HEADERS)
-
-
+set(DBUS_INTERFACES)
 
 # Feature: notificationmonitor
 if(WATCHFISH_FEATURES MATCHES "notificationmonitor")
@@ -89,7 +89,8 @@ if(WATCHFISH_FEATURES MATCHES "calendar")
             pkg_check_modules(KF5CALENDARCORE REQUIRED KF5CalendarCore)
             target_include_directories(libwatchfish PUBLIC ${KF5CALENDARCORE_INCLUDE_DIRS})
             target_link_libraries(libwatchfish PUBLIC ${KF5CALENDARCORE_LIBRARIES})
-            add_definitions(-DKF5CALENDARCORE)
+# FIXME?
+##            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DKF5CALENDARCORE") # add_definitions(-DKF5CALENDARCORE) # add_definitions is not applied for moc_
         endif()
 
         list(APPEND HEADERS
@@ -166,14 +167,5 @@ if(WATCHFISH_FEATURES MATCHES "volume")
     )
 endif()
 
-# Add sources and headers to the library
-target_sources(libwatchfish PUBLIC ${SOURCES} ${HEADERS})
-
-# Install DBus interfaces if defined
-if(DBUS_INTERFACES)
-    foreach(DBUS_FILE ${DBUS_INTERFACES})
-        install(FILES ${DBUS_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dbus-1/interfaces)
-    endforeach()
-endif()
-
-
+qt5_add_dbus_interfaces(DBUS_INTERFACES_GEN ${DBUS_INTERFACES})
+target_sources(libwatchfish PUBLIC ${SOURCES} ${HEADERS} PRIVATE ${DBUS_INTERFACES_GEN})
