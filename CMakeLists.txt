@@ -5,22 +5,17 @@ cmake_minimum_required(VERSION 3.16)
 # set(FLAVOR silica)
 # set(WATCHFISH_FEATURES "notificationmonitor;walltime;music;calendar;voicecall;volume")
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Define the library type
 add_library(libwatchfish STATIC)
 
 find_package(PkgConfig REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core DBus)
 
-# Link with Qt5 DBus
 target_include_directories(libwatchfish PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-#target_include_directories(libwatchfish PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(libwatchfish PUBLIC Qt5::Core Qt5::DBus)
 
-# Collect source files based on features
 set(SOURCES)
 set(HEADERS)
 set(DBUS_INTERFACES)
@@ -89,8 +84,7 @@ if(WATCHFISH_FEATURES MATCHES "calendar")
             pkg_check_modules(KF5CALENDARCORE REQUIRED KF5CalendarCore)
             target_include_directories(libwatchfish PUBLIC ${KF5CALENDARCORE_INCLUDE_DIRS})
             target_link_libraries(libwatchfish PUBLIC ${KF5CALENDARCORE_LIBRARIES})
-# FIXME?
-##            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DKF5CALENDARCORE") # add_definitions(-DKF5CALENDARCORE) # add_definitions is not applied for moc_
+            add_definitions(-DKF5CALENDARCORE)
         endif()
 
         list(APPEND HEADERS
@@ -168,4 +162,4 @@ if(WATCHFISH_FEATURES MATCHES "volume")
 endif()
 
 qt5_add_dbus_interfaces(DBUS_INTERFACES_GEN ${DBUS_INTERFACES})
-target_sources(libwatchfish PUBLIC ${SOURCES} ${HEADERS} PRIVATE ${DBUS_INTERFACES_GEN})
+target_sources(libwatchfish PUBLIC ${HEADERS} PRIVATE ${SOURCES} ${DBUS_INTERFACES_GEN})
