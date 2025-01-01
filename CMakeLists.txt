@@ -18,7 +18,7 @@ target_link_libraries(libwatchfish PUBLIC Qt5::Core Qt5::DBus)
 
 set(SOURCES)
 set(HEADERS)
-set(DBUS_INTERFACES)
+set(DBUS_INTERFACES_GEN)
 
 # Feature: notificationmonitor
 if(WATCHFISH_FEATURES MATCHES "notificationmonitor")
@@ -68,9 +68,7 @@ if(WATCHFISH_FEATURES MATCHES "music")
         musiccontroller.h
         musiccontroller_p.h
     )
-    list(APPEND DBUS_INTERFACES
-        com.Meego.MainVolume2.xml
-    )
+    qt5_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
 endif()
 
 # Feature: calendar
@@ -122,10 +120,8 @@ if(WATCHFISH_FEATURES MATCHES "voicecall")
             voicecallcontroller_p.h
             voicecallcontrollerbase.h
         )
-        list(APPEND DBUS_INTERFACES
-            org.nemomobile.voicecall.VoiceCallManager.xml
-            org.nemomobile.voicecall.VoiceCall.xml
-        )
+        qt5_add_dbus_interface(DBUS_INTERFACES_GEN org.nemomobile.voicecall.VoiceCallManager.xml voicecallmanager_interface)
+        qt5_add_dbus_interface(DBUS_INTERFACES_GEN org.nemomobile.voicecall.VoiceCall.xml voicecall_interface)
     elseif(FLAVOR STREQUAL "uuitk") # ubuntu touch
         find_package(Qt5 COMPONENTS Contacts)
         target_compile_definitions(libwatchfish PUBLIC UUITK_EDITION)
@@ -156,10 +152,7 @@ if(WATCHFISH_FEATURES MATCHES "volume")
         volumecontroller.h
         volumecontroller_p.h
     )
-    list(APPEND DBUS_INTERFACES
-        com.Meego.MainVolume2.xml
-    )
+    qt5_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
 endif()
 
-qt5_add_dbus_interfaces(DBUS_INTERFACES_GEN ${DBUS_INTERFACES})
 target_sources(libwatchfish PUBLIC ${HEADERS} PRIVATE ${SOURCES} ${DBUS_INTERFACES_GEN})

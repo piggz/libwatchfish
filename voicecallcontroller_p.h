@@ -23,8 +23,8 @@
 #include <QtContacts/QContactDetailFilter>
 
 #include "voicecallcontroller.h"
-#include "voicecallinterface.h"
-#include "voicecallmanagerinterface.h"
+#include "voicecall_interface.h"
+#include "voicecallmanager_interface.h"
 
 namespace watchfish
 {

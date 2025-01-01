@@ -20,7 +20,7 @@
 #define WATCHFISH_VOLUMECONTROLLER_P_H
 
 #include <QDBusConnection>
-#include "mainvolume2interface.h"
+#include "mainvolume2_interface.h"
 #include "volumecontroller.h"
 
 namespace watchfish
