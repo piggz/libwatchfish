@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 # set(FLAVOR kirigami)
 # set(FLAVOR uuitk)
 # set(FLAVOR silica)
-# set(WATCHFISH_FEATURES "notificationmonitor;walltime;music;calendar;voicecall;volume")
+# set(WATCHFISH_FEATURES "notificationmonitor;walltime;music;calendar;voicecall;volume;soundprofile")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +19,16 @@ target_link_libraries(libwatchfish PUBLIC Qt5::Core Qt5::DBus)
 set(SOURCES)
 set(HEADERS)
 set(DBUS_INTERFACES_GEN)
+
+# Feature: soundprofile
+if(WATCHFISH_FEATURES MATCHES "soundprofile")
+    LIST(APPEND SOURCES
+        soundprofile.cpp
+    )
+    LIST(APPEND HEADERS
+        soundprofile.h
+    )
+endif()
 
 # Feature: notificationmonitor
 if(WATCHFISH_FEATURES MATCHES "notificationmonitor")

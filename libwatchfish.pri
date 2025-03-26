@@ -3,6 +3,11 @@ equals(FLAVOR, "silica") {
     QT += contacts
 }
 
+contains(WATCHFISH_FEATURES, soundprofile{
+	HEADERS += $$PWD/soundprofile.h
+	SOURCES += $$PWD/soundprofile.cpp
+}
+
 contains(WATCHFISH_FEATURES, notificationmonitor) {
 	PKGCONFIG += dbus-1
 	HEADERS += $$PWD/notificationmonitor.h $$PWD/notificationmonitor_p.h $$PWD/notification.h
