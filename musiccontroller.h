@@ -52,23 +52,31 @@ public:
 		RepeatPlaylist
 	};
 
+    Q_PROPERTY(QString title READ title NOTIFY titleChanged FINAL)
+    Q_PROPERTY(QString album READ album NOTIFY albumChanged FINAL)
+    Q_PROPERTY(QString artist READ artist NOTIFY artistChanged FINAL)
+    Q_PROPERTY(QString albumArt READ albumArt NOTIFY albumArtChanged FINAL)
+    Q_PROPERTY(int duration READ duration NOTIFY durationChanged FINAL)
+    Q_PROPERTY(bool shuffle READ shuffle NOTIFY shuffleChanged FINAL)
+    Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged FINAL)
+
+
     Q_INVOKABLE Status status() const;
     Q_INVOKABLE QString service() const;
 
     Q_INVOKABLE QVariantMap metadata() const;
 
-    Q_INVOKABLE QString title() const;
-    Q_INVOKABLE QString album() const;
-    Q_INVOKABLE QString artist() const;
+    QString title() const;
+    QString album() const;
+    QString artist() const;
+    QString albumArt() const;
 
-    Q_INVOKABLE QString albumArt() const;
-
-    Q_INVOKABLE int duration() const;
+    int duration() const;
 
     Q_INVOKABLE RepeatStatus repeat() const;
-    Q_INVOKABLE bool shuffle() const;
+    bool shuffle() const;
 
-    Q_INVOKABLE int volume() const;
+    int volume() const;
 
 public slots:
 	void play();
