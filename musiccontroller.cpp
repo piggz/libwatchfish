@@ -319,6 +319,11 @@ int MusicController::volume() const
                                                    "org.freedesktop.DBus.Properties", "Get");
     call << "com.Meego.MainVolume2" << "CurrentStep";
 
+    if (d_ptr->_pulseBus == nullptr) {
+        qWarning() << "bus not available";
+        return volume;
+    }
+
     QDBusReply<QDBusVariant> volumeReply = d_ptr->_pulseBus->call(call);
     if (volumeReply.isValid()) {
         // Decide the new value for volume, taking limits into account
@@ -364,6 +369,11 @@ void MusicController::setVolume(const uint newVolume)
     QDBusMessage call = QDBusMessage::createMethodCall("com.Meego.MainVolume2", "/com/meego/mainvolume2",
                                           "org.freedesktop.DBus.Properties", "Set");
     call << "com.Meego.MainVolume2" << "CurrentStep" << QVariant::fromValue(QDBusVariant(newVolume));
+
+    if (d_ptr->_pulseBus == nullptr) {
+        qWarning() << "bus not available";
+        return;
+    }
 
     QDBusError err = d_ptr->_pulseBus->call(call);
     if (err.isValid()) {
