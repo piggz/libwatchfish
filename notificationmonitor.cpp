@@ -136,6 +136,11 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		}
 	}
 
+	if (proto.appName == "ayatana-indicator-sound") {
+		qCDebug(notificationMonitorCat) << "Drop notification" << proto;
+		return;
+	}
+
 	if (is_new_notification) {
 		_notifs.insert(id, n);
 		emit q->notification(n);
