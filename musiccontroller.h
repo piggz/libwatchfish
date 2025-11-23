@@ -19,6 +19,7 @@
 #ifndef WATCHFISH_MUSICCONTROLLER_H
 #define WATCHFISH_MUSICCONTROLLER_H
 
+#include <QObject>
 #include <QtCore/QLoggingCategory>
 
 namespace watchfish
@@ -50,24 +51,33 @@ public:
 		RepeatTrack,
 		RepeatPlaylist
 	};
+    Q_ENUM(RepeatStatus)
 
-	Status status() const;
-	QString service() const;
+    Q_PROPERTY(QString title READ title NOTIFY titleChanged FINAL)
+    Q_PROPERTY(QString album READ album NOTIFY albumChanged FINAL)
+    Q_PROPERTY(QString artist READ artist NOTIFY artistChanged FINAL)
+    Q_PROPERTY(QString albumArt READ albumArt NOTIFY albumArtChanged FINAL)
+    Q_PROPERTY(int duration READ duration NOTIFY durationChanged FINAL)
+    Q_PROPERTY(bool shuffle READ shuffle NOTIFY shuffleChanged FINAL)
+    Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged FINAL)
 
-	QVariantMap metadata() const;
 
-	QString title() const;
-	QString album() const;
-	QString artist() const;
+    Q_INVOKABLE Status status() const;
+    Q_INVOKABLE QString service() const;
 
-	QString albumArt() const;
+    Q_INVOKABLE QVariantMap metadata() const;
 
-	int duration() const;
+    QString title() const;
+    QString album() const;
+    QString artist() const;
+    QString albumArt() const;
 
-	RepeatStatus repeat() const;
-	bool shuffle() const;
+    int duration() const;
 
-	int volume() const;
+    Q_INVOKABLE RepeatStatus repeat() const;
+    bool shuffle() const;
+
+    int volume() const;
 
 public slots:
 	void play();
