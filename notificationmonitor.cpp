@@ -278,7 +278,11 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
     // Lookup category info and merge it with the notification info if found.
 	if (hints.contains("category")) {
 		proto.hints = getCategoryInfo(hints["category"]);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		proto.hints.insert(hints);
+#else
 		proto.hints.unite(hints);
+#endif
 	} else {
 		proto.hints = hints;
 	}
