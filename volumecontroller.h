@@ -20,6 +20,7 @@
 #define WATCHFISH_VOLUMECONTROLLER_H
 
 #include <QtCore/QLoggingCategory>
+#include <QObject>
 
 namespace watchfish
 {
