@@ -171,6 +171,9 @@ CalendarSource::CalendarSource(QObject *parent)
     m_manager = new QOrganizerManager(envManager);
     m_manager->setParent(this);
 
+    connect(m_manager, &QOrganizerManager::itemsAdded, this, &CalendarSource::changed);
+    connect(m_manager, &QOrganizerManager::itemsRemoved, this, &CalendarSource::changed);
+    connect(m_manager, &QOrganizerManager::itemsChanged, this, &CalendarSource::changed);
 }
 
 CalendarSource::~CalendarSource()
