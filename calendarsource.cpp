@@ -24,6 +24,27 @@
 #include "calendarsource_p.h"
 #include <KCalendarCore/OccurrenceIterator>
 #include <KCalendarCore/Event>
+
+#elif defined(UUITK_EDITION)
+
+    #include <QDebug>
+    #include <QOrganizerEventOccurrence>
+    #include <QOrganizerEventTime>
+    #include <QOrganizerItem>
+    #include <QOrganizerItemAudibleReminder>
+    #include <QOrganizerItemDescription>
+    #include <QOrganizerItemDetail>
+    #include <QOrganizerItemEmailReminder>
+    #include <QOrganizerItemFetchRequest>
+    #include <QOrganizerItemLocation>
+    #include <QOrganizerItemReminder>
+    #include <QOrganizerItemType>
+    #include <QOrganizerItemVisualReminder>
+    #include <QOrganizerManager>
+
+    #define MANAGER           "eds"
+    #define MANAGER_FALLBACK  "memory"
+
 #endif
 
 namespace watchfish
@@ -135,6 +156,95 @@ QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate
 
 	qCDebug(calendarSourceCat) << "Returning" << events.size() << "events";
 	return events;
+}
+
+#elif defined(UUITK_EDITION)
+CalendarSource::CalendarSource(QObject *parent)
+    : QObject(parent)
+{
+    QString envManager(qgetenv("ALARM_BACKEND"));
+    if (envManager.isEmpty())
+        envManager = MANAGER;
+    if (!QOrganizerManager::availableManagers().contains(envManager)) {
+        envManager = MANAGER_FALLBACK;
+    }
+    m_manager = new QOrganizerManager(envManager);
+    m_manager->setParent(this);
+
+}
+
+CalendarSource::~CalendarSource()
+{
+}
+
+QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate &end,
+                                                 bool startInclusive, bool endInclusive)
+{
+    QList<CalendarEvent> events;
+
+    QDateTime startTime = QDateTime(start, QTime(0, 0));
+    QDateTime endTime = QDateTime(end, QTime(23, 59, 59));
+
+    QOrganizerItemFetchRequest request;
+    request.setManager(m_manager);
+    request.setStartDate(startTime);
+    request.setEndDate(endTime);
+    request.start();
+    request.waitForFinished();
+
+//    qDebug() << "Fetch error:" << request.error();
+    const QList<QOrganizerItem> items = request.items();
+//    qDebug() << "items count:" << items.count();
+
+    for (const QOrganizerItem &item : items) {
+
+        QOrganizerItemType::ItemType type = item.type();
+        if (type != QOrganizerItemType::TypeEvent &&
+            type != QOrganizerItemType::TypeEventOccurrence) {
+            continue;
+        }
+        QOrganizerEventTime timeDetail = static_cast<QOrganizerEventTime>(
+            item.detail(QOrganizerItemDetail::TypeEventTime)
+        );
+
+        QOrganizerItemDescription descDetail = static_cast<QOrganizerItemDescription>(
+            item.detail(QOrganizerItemDetail::TypeDescription)
+        );
+        QOrganizerItemLocation locationDetail = static_cast<QOrganizerItemLocation>(
+            item.detail(QOrganizerItemDetail::TypeLocation)
+        );
+        QOrganizerItemReminder reminderDetail = static_cast<QOrganizerItemReminder>(
+            item.detail(QOrganizerItemDetail::TypeReminder)
+        );
+
+        QOrganizerItemVisualReminder visualReminder = static_cast<QOrganizerItemVisualReminder>(
+            item.detail(QOrganizerItemDetail::TypeVisualReminder)
+        );
+        QOrganizerItemAudibleReminder audibleReminder = static_cast<QOrganizerItemAudibleReminder>(
+            item.detail(QOrganizerItemDetail::TypeAudibleReminder)
+        );
+
+        CalendarEvent ev;
+        ev.setUid(item.guid());
+        ev.setStart(timeDetail.startDateTime());
+        ev.setEnd(timeDetail.endDateTime());
+        ev.setTitle(item.displayLabel());
+        ev.setLocation(locationDetail.label());
+        ev.setDescription(descDetail.description());
+        ev.setAllDay(timeDetail.isAllDay());
+        if (!reminderDetail.isEmpty()) {
+            ev.setAlertTime(timeDetail.startDateTime().addSecs(-reminderDetail.secondsBeforeStart()));
+        }
+        if (!visualReminder.isEmpty()) {
+            ev.setAlertTime(timeDetail.startDateTime().addSecs(-visualReminder.secondsBeforeStart()));
+        }
+        if (!audibleReminder.isEmpty()) {
+            ev.setAlertTime(timeDetail.startDateTime().addSecs(-audibleReminder.secondsBeforeStart()));
+        }
+        events.append(ev);
+    }
+
+    return events;
 }
 
 #else
