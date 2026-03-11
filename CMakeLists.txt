@@ -100,6 +100,16 @@ if(WATCHFISH_FEATURES MATCHES "calendar")
             calendarsource_p.h
             calendarevent.h
         )
+    elseif(FLAVOR STREQUAL "uuitk")
+        find_package(Qt5 COMPONENTS Organizer)
+        target_compile_definitions(libwatchfish PUBLIC UUITK_EDITION)
+        target_link_libraries(libwatchfish PUBLIC Qt5::Organizer)
+
+        list(APPEND HEADERS
+            calendarsource.h
+            calendarevent.h
+        )
+
     else()
         list(APPEND HEADERS
             calendarsource.h

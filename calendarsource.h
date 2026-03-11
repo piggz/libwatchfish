@@ -21,6 +21,15 @@
 
 #include <QtCore/QLoggingCategory>
 
+#if defined(UUITK_EDITION)
+    #include <QOrganizerManager>
+    #include <QOrganizerAbstractRequest>
+    #include <QOrganizerEvent>
+
+    QTORGANIZER_USE_NAMESPACE
+#endif
+
+
 #include "calendarevent.h"
 
 namespace watchfish
@@ -48,6 +57,8 @@ signals:
 private:
 #ifdef MER_EDITION_SAILFISH
 	CalendarSourcePrivate * const d_ptr;
+#elif defined(UUITK_EDITION)
+	QOrganizerManager *m_manager;
 #endif
 };
 

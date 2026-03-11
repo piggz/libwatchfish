@@ -1,6 +1,7 @@
 #ifndef CALENDAREVENT_H
 #define CALENDAREVENT_H
 
+#include <QDebug>
 #include <QSharedDataPointer>
 #include <QDateTime>
 #include <QMetaType>
@@ -56,6 +57,22 @@ public:
 private:
 	QSharedDataPointer<CalendarEventData> data;
 };
+
+inline QDebug operator<<(QDebug debug, const CalendarEvent &event)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "CalendarEvent("
+        << "uid=" << event.uid() << ", "
+        << "title=" << event.title() << ", "
+        << "start=" << event.start() << ", "
+        << "end=" << event.end() << ", "
+        << "alertTime=" << event.alertTime() << ", "
+        << "location=" << event.location() << ", "
+        << "description=" << event.description() << ", "
+        << "allDay=" << event.allDay()
+        << ")";
+    return debug;
+}
 
 }
 
