@@ -67,7 +67,7 @@ endif()
 
 # Feature: music
 if(WATCHFISH_FEATURES MATCHES "music")
-    pkg_check_modules(MPRIS REQUIRED mpris-qt5)
+    pkg_check_modules(MPRIS REQUIRED ambermpris)
     target_include_directories(libwatchfish PUBLIC ${MPRIS_INCLUDE_DIRS})
     target_link_libraries(libwatchfish PUBLIC ${MPRIS_LIBRARIES})
 
