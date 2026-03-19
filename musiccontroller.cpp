@@ -172,7 +172,7 @@ void MusicControllerPrivate::updateMetadata()
 		updateAlbumArt();
 	}
 
-	int newDuration = metadata->duration().toULongLong() / 1000UL;
+	int newDuration = metadata->duration().toULongLong();
 	if (newDuration != curDuration) {
 		curDuration = newDuration;
 		emit q->durationChanged();
