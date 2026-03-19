@@ -144,12 +144,12 @@ void MusicControllerPrivate::updateAlbumArt()
 void MusicControllerPrivate::updateMetadata()
 {
 	Q_Q(MusicController);
-	Amber::MprisMetaData metadata = controller->metaData();
+	Amber::MprisMetaData *metadata = controller->metaData();
 	bool checkAlbumArt = false;
 
-	QString newArtist = metadata.albumArtist().toString(),
-			newAlbum = metadata.albumTitle().toString(),
-			newTitle = metadata.title().toString();
+	QString newArtist = metadata->contributingArtist().toString(),
+			newAlbum = metadata->albumTitle().toString(),
+			newTitle = metadata->title().toString();
 
 	if (newArtist != curArtist) {
 		curArtist = newArtist;
@@ -172,7 +172,7 @@ void MusicControllerPrivate::updateMetadata()
 		updateAlbumArt();
 	}
 
-	int newDuration = metadata.duration().toULongLong() / 1000UL;
+	int newDuration = metadata->duration().toULongLong() / 1000UL;
 	if (newDuration != curDuration) {
 		curDuration = newDuration;
 		emit q->durationChanged();
