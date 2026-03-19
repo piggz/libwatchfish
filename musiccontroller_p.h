@@ -19,8 +19,8 @@
 #ifndef WATCHFISH_MUSICCONTROLLER_P_H
 #define WATCHFISH_MUSICCONTROLLER_P_H
 
-#include <MprisQt/mpris.h>
-#include <MprisQt/mprismanager.h>
+#include <AmberMpris/mpris.h>
+#include <AmberMpris/mprismanager.h>
 
 #include "musiccontroller.h"
 
