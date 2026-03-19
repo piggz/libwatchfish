@@ -20,6 +20,7 @@
 #define WATCHFISH_MUSICCONTROLLER_H
 
 #include <QObject>
+#include <AmberMpris/mprismetadata.h>
 #include <QtCore/QLoggingCategory>
 
 namespace watchfish
@@ -61,11 +62,10 @@ public:
     Q_PROPERTY(bool shuffle READ shuffle NOTIFY shuffleChanged FINAL)
     Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged FINAL)
 
+    Amber::MprisMetaData metadata() const;
 
     Q_INVOKABLE Status status() const;
     Q_INVOKABLE QString service() const;
-
-    Q_INVOKABLE QVariantMap metadata() const;
 
     QString title() const;
     QString album() const;
