@@ -20,7 +20,7 @@
 #define WATCHFISH_MUSICCONTROLLER_P_H
 
 #include <AmberMpris/mpris.h>
-#include <AmberMpris/mprismanager.h>
+#include <AmberMpris/mpriscontroller.h>
 
 #include "musiccontroller.h"
 
@@ -36,7 +36,7 @@ public:
 	~MusicControllerPrivate();
 
 public:
-	MprisManager *manager;
+	Amber::MprisController *controller;
 	MusicController::Status curStatus;
 	QString curTitle;
 	QString curAlbum;
