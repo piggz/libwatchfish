@@ -59,9 +59,43 @@ NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
 	dbus_connection_set_watch_functions(_conn, busWatchAdd, busWatchRemove,
 										busWatchToggle, this, NULL);
 
-	addMatchRule("type='method_call',interface='org.freedesktop.Notifications',member='Notify',eavesdrop='true'");
-	addMatchRule("type='method_return',sender='org.freedesktop.Notifications',eavesdrop='true'");
-	addMatchRule("type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'");
+	bool became_monitor = false;
+	const char *rules[] = {
+		"type='method_call',interface='org.freedesktop.Notifications',member='Notify'",
+		"type='method_return',sender='org.freedesktop.Notifications'",
+		"type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'"
+	};
+
+	DBusMessage *msg = dbus_message_new_method_call("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.Monitoring", "BecomeMonitor");
+	if (msg) {
+		dbus_uint32_t flags = 0;
+		DBusMessageIter iter, sub;
+		dbus_message_iter_init_append(msg, &iter);
+		dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "s", &sub);
+		for (int i = 0; i < 3; ++i) {
+			dbus_message_iter_append_basic(&sub, DBUS_TYPE_STRING, &rules[i]);
+		}
+		dbus_message_iter_close_container(&iter, &sub);
+		dbus_message_iter_append_basic(&iter, DBUS_TYPE_UINT32, &flags);
+
+		DBusMessage *reply = dbus_connection_send_with_reply_and_block(_conn, msg, -1, &error);
+		if (reply) {
+			dbus_message_unref(reply);
+			became_monitor = true;
+			qCDebug(notificationMonitorCat) << "Became monitor";
+		} else {
+			qCDebug(notificationMonitorCat) << "Could not become monitor:" << (error.message ? error.message : "unknown error");
+			dbus_error_free(&error);
+		}
+		dbus_message_unref(msg);
+	}
+
+	if (!became_monitor) {
+		qCDebug(notificationMonitorCat) << "Falling back to legacy eavesdropping";
+		addMatchRule("type='method_call',interface='org.freedesktop.Notifications',member='Notify',eavesdrop='true'");
+		addMatchRule("type='method_return',sender='org.freedesktop.Notifications',eavesdrop='true'");
+		addMatchRule("type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'");
+	}
 
 	dbus_bool_t result = dbus_connection_add_filter(_conn, busMessageFilter,
 													this, NULL);
