@@ -19,6 +19,7 @@
 #ifndef WATCHFISH_MUSICCONTROLLER_H
 #define WATCHFISH_MUSICCONTROLLER_H
 
+#include <AmberMpris/mprismetadata.h>
 #include <QtCore/QLoggingCategory>
 
 namespace watchfish
@@ -54,7 +55,7 @@ public:
 	Status status() const;
 	QString service() const;
 
-	QVariantMap metadata() const;
+	Amber::MprisMetaData metadata() const;
 
 	QString title() const;
 	QString album() const;
