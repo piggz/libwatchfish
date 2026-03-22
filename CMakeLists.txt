@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 add_library(libwatchfish STATIC)
 
 # Make sure to choose same Qt version as rest of project
@@ -26,6 +27,12 @@ else()
         find_package(Qt5 REQUIRED COMPONENTS Core Xml)
         set(QT_VERSION_MAJOR 5)
     endif()
+endif()
+
+if(QT_VERSION_MAJOR EQUAL 5)
+    macro(qt_add_dbus_interface outfiles interface basename)
+        qt5_add_dbus_interface(${outfiles} ${interface} ${basename})
+    endmacro()
 endif()
 
 message(STATUS "libwatchfish: using Qt ${QT_VERSION_MAJOR}")
