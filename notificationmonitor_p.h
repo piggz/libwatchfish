@@ -55,6 +55,9 @@ public:
     explicit NotificationMonitorPrivate(NotificationMonitor *q);
 	~NotificationMonitorPrivate();
 
+signals:
+    void notificationClosed(quint32 nid, quint32 reason);
+
 private:
 	/** Converts a ProtoNotification into a Notification object and raises it. */
 	void processIncomingNotification(quint32 id, const ProtoNotification &proto);

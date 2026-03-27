@@ -63,6 +63,7 @@ Notification::Notification(uint id, QObject *parent) : QObject(parent), d_ptr(ne
 
 Notification::~Notification()
 {
+	delete d_ptr;
 }
 
 uint Notification::id() const

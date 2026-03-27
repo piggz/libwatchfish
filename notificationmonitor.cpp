@@ -16,12 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QRegularExpression>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QMessageLogger>
 #include <QtCore/QSettings>
 #include <QtCore/QSocketNotifier>
-#include <QRegularExpression>
 
 #include "notification.h"
 #include "notificationmonitor.h"
@@ -45,8 +45,11 @@ QDebug operator<<(QDebug &debug, const ProtoNotification &proto)
 }
 
 NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
-	: q_ptr(q)
+    : QObject(q), q_ptr(q)
 {
+	connect(this, &NotificationMonitorPrivate::notificationClosed, q,
+		&NotificationMonitor::notificationClosed);
+
 	DBusError error = DBUS_ERROR_INIT;
 	_conn = dbus_bus_get_private(DBUS_BUS_SESSION, &error);
 	if (!_conn) {
@@ -108,11 +111,8 @@ NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
 
 NotificationMonitorPrivate::~NotificationMonitorPrivate()
 {
-	QMap<quint32, Notification*>::iterator it = _notifs.begin();
-	while (it != _notifs.end()) {
-		delete it.value();
-	}
-
+	qDeleteAll(_notifs);
+	_notifs.clear();
 #if 0 /* No need to remove match rules since we're closing the connection. */
 	removeMatchRule("type='method_call',interface='org.freedesktop.Notifications',member='Notify',eavesdrop='true'");
 	removeMatchRule("type='method_return',sender='org.freedesktop.Notifications',eavesdrop='true'");
@@ -184,6 +184,8 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 void NotificationMonitorPrivate::processCloseNotification(quint32 id, quint32 reason)
 {
 	qCDebug(notificationMonitorCat) << "Close notification" << id << reason;
+	emit notificationClosed(id, reason);
+
 	Notification *n = _notifs.value(id, 0);
 	if (n) {
 		_notifs.remove(id);
@@ -513,5 +515,11 @@ NotificationMonitor::~NotificationMonitor()
 {
 	delete d_ptr;
 }
+
+Notification *NotificationMonitor::getNotification(uint id) const {
+	Q_D(const NotificationMonitor);
+	return d->_notifs.value(id, nullptr);
+}
+
 
 }
