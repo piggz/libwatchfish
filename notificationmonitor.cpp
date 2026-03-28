@@ -16,12 +16,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QRegularExpression>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QMessageLogger>
 #include <QtCore/QSettings>
 #include <QtCore/QSocketNotifier>
-#include <QRegularExpression>
 
 #include "notification.h"
 #include "notificationmonitor.h"
@@ -278,7 +278,11 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
     // Lookup category info and merge it with the notification info if found.
 	if (hints.contains("category")) {
 		proto.hints = getCategoryInfo(hints["category"]);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		proto.hints.insert(hints);
+#else
 		proto.hints.unite(hints);
+#endif
 	} else {
 		proto.hints = hints;
 	}

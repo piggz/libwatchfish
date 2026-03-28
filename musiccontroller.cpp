@@ -21,6 +21,12 @@
 #include <QDBusMessage>
 #include <QDBusReply>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRegularExpression>
+#else
+#include <QRegExp>
+#endif
+
 #include "mprismetadata.h"
 #include "musiccontroller.h"
 #include "musiccontroller_p.h"
@@ -57,11 +63,19 @@ MusicControllerPrivate::~MusicControllerPrivate()
 
 QString MusicControllerPrivate::stripAlbumArtComponent(const QString& component)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	static QRegularExpression rsb("\\[.*\\]");
+	static QRegularExpression rfb("\\{.*\\}");
+	static QRegularExpression rrb("\\(.*\\)");
+	static QRegularExpression stripB("^[()_{}\\[\\]!@#$^&*+=|\\\\/\"'?<>~`\\s\\t]*");
+	static QRegularExpression stripE("[()_{}\\[\\]!@#$^&*+=|\\\\/\"'?<>~`\\s\\t]*$");
+#else
 	static QRegExp rsb("\\[.*\\]");
 	static QRegExp rfb("{.*}");
 	static QRegExp rrb("\\(.*\\)");
 	static QRegExp stripB("^[()_{}[]!@#$^&*+=|\\\\/\"'?<>~`\\s\\t]*");
 	static QRegExp stripE("[()_{}[]!@#$^&*+=|\\\\/\"'?<>~`\\s\\t]*$");
+#endif
 	QString s(component);
 
 	if (s.isEmpty()) {
