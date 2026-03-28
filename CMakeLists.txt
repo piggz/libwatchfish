@@ -10,11 +10,39 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(libwatchfish STATIC)
 
+# Make sure to choose same Qt version as rest of project
+if(TARGET Qt6::Core)
+    set(QT_VERSION_MAJOR 6)
+    find_package(Qt6 REQUIRED COMPONENTS Core DBus)
+elseif(TARGET Qt5::Core)
+    set(QT_VERSION_MAJOR 5)
+    find_package(Qt5 REQUIRED COMPONENTS Core DBus)
+else()
+    # Use Qt6 first if available
+    find_package(Qt6 COMPONENTS Core DBus QUIET)
+    if(Qt6_FOUND)
+        set(QT_VERSION_MAJOR 6)
+    else()
+        find_package(Qt5 REQUIRED COMPONENTS Core Xml)
+        set(QT_VERSION_MAJOR 5)
+    endif()
+endif()
+
+if(QT_VERSION_MAJOR EQUAL 5)
+    macro(qt_add_dbus_interface outfiles interface basename)
+        qt5_add_dbus_interface(${outfiles} ${interface} ${basename})
+    endmacro()
+endif()
+
+message(STATUS "libwatchfish: using Qt ${QT_VERSION_MAJOR}")
+
 find_package(PkgConfig REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core DBus)
 
 target_include_directories(libwatchfish PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libwatchfish PUBLIC Qt5::Core Qt5::DBus)
+target_link_libraries(libwatchfish PUBLIC
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::DBus
+)
 
 set(SOURCES)
 set(HEADERS)
@@ -52,7 +80,7 @@ endif()
 # Feature: walltime
 if(WATCHFISH_FEATURES MATCHES "walltime")
 
-    pkg_check_modules(TIMED REQUIRED timed-qt5)
+    pkg_check_modules(TIMED REQUIRED timed-qt${QT_VERSION_MAJOR})
     target_include_directories(libwatchfish PUBLIC ${TIMED_INCLUDE_DIRS})
     target_link_libraries(libwatchfish PUBLIC ${TIMED_LIBRARIES})
 
@@ -67,7 +95,11 @@ endif()
 
 # Feature: music
 if(WATCHFISH_FEATURES MATCHES "music")
-    pkg_check_modules(MPRIS REQUIRED ambermpris)
+    if(QT_VERSION_MAJOR EQUAL 6)
+        pkg_check_modules(MPRIS REQUIRED ambermpris6)
+    else()
+        pkg_check_modules(MPRIS REQUIRED ambermpris)
+    endif()
     target_include_directories(libwatchfish PUBLIC ${MPRIS_INCLUDE_DIRS})
     target_link_libraries(libwatchfish PUBLIC ${MPRIS_LIBRARIES})
 
@@ -78,13 +110,13 @@ if(WATCHFISH_FEATURES MATCHES "music")
         musiccontroller.h
         musiccontroller_p.h
     )
-    qt5_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
+    qt_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
 endif()
 
 # Feature: calendar
 if(WATCHFISH_FEATURES MATCHES "calendar")
     if(FLAVOR STREQUAL "silica")
-        pkg_check_modules(LIBMKCAL REQUIRED libmkcal-qt5)
+        pkg_check_modules(LIBMKCAL REQUIRED libmkcal-qt${QT_VERSION_MAJOR})
         target_include_directories(libwatchfish PUBLIC ${LIBMKCAL_INCLUDE_DIRS})
         target_link_libraries(libwatchfish PUBLIC ${LIBMKCAL_LIBRARIES})
 
@@ -101,9 +133,9 @@ if(WATCHFISH_FEATURES MATCHES "calendar")
             calendarevent.h
         )
     elseif(FLAVOR STREQUAL "uuitk")
-        find_package(Qt5 COMPONENTS Organizer)
+        find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Organizer)
         target_compile_definitions(libwatchfish PUBLIC UUITK_EDITION)
-        target_link_libraries(libwatchfish PUBLIC Qt5::Organizer)
+        target_link_libraries(libwatchfish PUBLIC Qt${QT_VERSION_MAJOR}::Organizer)
 
         list(APPEND HEADERS
             calendarsource.h
@@ -126,9 +158,9 @@ endif()
 # Feature: voicecall
 if(WATCHFISH_FEATURES MATCHES "voicecall")
     if(FLAVOR STREQUAL "silica")
-        find_package(Qt5 COMPONENTS Contacts)
+        find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Contacts)
         target_compile_definitions(libwatchfish PUBLIC MER_EDITION_SAILFISH)
-        target_link_libraries(libwatchfish PUBLIC Qt5::Contacts)
+        target_link_libraries(libwatchfish PUBLIC Qt${QT_VERSION_MAJOR}::Contacts)
 
         list(APPEND SOURCES
             voicecallcontroller_sailfish.cpp
@@ -140,12 +172,12 @@ if(WATCHFISH_FEATURES MATCHES "voicecall")
             voicecallcontroller_p.h
             voicecallcontrollerbase.h
         )
-        qt5_add_dbus_interface(DBUS_INTERFACES_GEN org.nemomobile.voicecall.VoiceCallManager.xml voicecallmanager_interface)
-        qt5_add_dbus_interface(DBUS_INTERFACES_GEN org.nemomobile.voicecall.VoiceCall.xml voicecall_interface)
+        qt_add_dbus_interface(DBUS_INTERFACES_GEN org.nemomobile.voicecall.VoiceCallManager.xml voicecallmanager_interface)
+        qt_add_dbus_interface(DBUS_INTERFACES_GEN org.nemomobile.voicecall.VoiceCall.xml voicecall_interface)
     elseif(FLAVOR STREQUAL "uuitk") # ubuntu touch
-        find_package(Qt5 COMPONENTS Contacts)
+        find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Contacts)
         target_compile_definitions(libwatchfish PUBLIC UUITK_EDITION)
-        target_link_libraries(libwatchfish PUBLIC Qt5::Contacts)
+        target_link_libraries(libwatchfish PUBLIC Qt${QT_VERSION_MAJOR}::Contacts)
 
         list(APPEND SOURCES
             voicecallcontroller_ubuntu.cpp
@@ -158,8 +190,8 @@ if(WATCHFISH_FEATURES MATCHES "voicecall")
             callchannelobserver.h
             voicecallcontrollerbase.h
         )
-        target_include_directories(libwatchfish PUBLIC /usr/include/telepathy-qt5/)
-        target_link_libraries(libwatchfish PUBLIC telepathy-qt5)
+        target_include_directories(libwatchfish PUBLIC /usr/include/telepathy-qt${QT_VERSION_MAJOR}/)
+        target_link_libraries(libwatchfish PUBLIC telepathy-qt${QT_VERSION_MAJOR})
     endif()
 endif()
 
@@ -172,7 +204,7 @@ if(WATCHFISH_FEATURES MATCHES "volume")
         volumecontroller.h
         volumecontroller_p.h
     )
-    qt5_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
+    qt_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
 endif()
 
 target_sources(libwatchfish PUBLIC ${HEADERS} PRIVATE ${SOURCES} ${DBUS_INTERFACES_GEN})

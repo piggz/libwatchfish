@@ -19,6 +19,7 @@
 #ifndef WATCHFISH_MUSICCONTROLLER_H
 #define WATCHFISH_MUSICCONTROLLER_H
 
+#include <QObject>
 #include <AmberMpris/mprismetadata.h>
 #include <QtCore/QLoggingCategory>
 
