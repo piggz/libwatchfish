@@ -23,6 +23,10 @@
 #include <AmberMpris/mpriscontroller.h>
 #include <QtDBus/QDBusInterface>
 
+#if !defined(MER_EDITION_SAILFISH) && !defined(UUITK_EDITION)
+#include <pulse/pulseaudio.h>
+#endif
+
 #include "musiccontroller.h"
 
 namespace watchfish
@@ -52,6 +56,15 @@ public:
 #elif defined(UUITK_EDITION)
     QDBusInterface *_accountsIface = nullptr;
     void connectAccountsBus();
+#else
+    // Native PulseAudio (libpulse) state for Kirigami/desktop
+    pa_mainloop     *_paMainloop = nullptr;
+    pa_context      *_paContext  = nullptr;
+    int              _cachedVolume = -1; // 0-100, -1 = unknown
+    bool connectPulse();
+    void disconnectPulse();
+    // Iterate the mainloop until the operation completes or timeout
+    bool iterateMainloop(pa_operation *op);
 #endif
 
 private:
