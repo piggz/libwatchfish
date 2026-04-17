@@ -18,8 +18,6 @@
 
 #include <QtCore/QDir>
 #include <QtCore/QCryptographicHash>
-#include <QDBusMessage>
-#include <QDBusReply>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
@@ -52,14 +50,7 @@ MusicControllerPrivate::MusicControllerPrivate(MusicController *q)
 			this, &MusicControllerPrivate::handleMetadataChanged);
 }
 
-MusicControllerPrivate::~MusicControllerPrivate()
-{
-    if (_pulseBus != NULL) {
-        qDebug() << "Disconnecting from PulseAudio P2P DBus";
-        QDBusConnection::disconnectFromBus("org.PulseAudio1");
-        delete(_pulseBus);
-    }
-}
+
 
 QString MusicControllerPrivate::stripAlbumArtComponent(const QString& component)
 {
@@ -225,37 +216,6 @@ MusicController::~MusicController()
 	delete d_ptr;
 }
 
-void MusicControllerPrivate::connectPulseBus() {
-    if (_pulseBus) {
-        if (!_pulseBus->isConnected())
-            delete(_pulseBus);
-        else
-            return;
-    }
-    QDBusMessage call = QDBusMessage::createMethodCall("org.PulseAudio1", "/org/pulseaudio/server_lookup1", "org.freedesktop.DBus.Properties", "Get" );
-    call << "org.PulseAudio.ServerLookup1" << "Address";
-    QDBusReply<QDBusVariant> lookupReply = QDBusConnection::sessionBus().call(call);
-    if (lookupReply.isValid()) {
-        qDebug() << "PulseAudio Bus address: " << lookupReply.value().variant().toString();
-        _pulseBus = new QDBusConnection(QDBusConnection::connectToPeer(lookupReply.value().variant().toString(), "org.PulseAudio1"));
-        if (_maxVolume == 0) {
-            // Query max volume
-            call = QDBusMessage::createMethodCall("com.Meego.MainVolume2", "/com/meego/mainvolume2",
-                                                               "org.freedesktop.DBus.Properties", "Get");
-            call << "com.Meego.MainVolume2" << "StepCount";
-            QDBusReply<QDBusVariant> volumeMaxReply = _pulseBus->call(call);
-            if (volumeMaxReply.isValid()) {
-                _maxVolume = volumeMaxReply.value().variant().toUInt();
-                qDebug() << "Max volume: " << _maxVolume;
-            }
-            else {
-                qWarning() << "Could not read volume max, cannot adjust volume: " << volumeMaxReply.error().message();
-            }
-        }
-    }
-    else
-        qDebug() << "Cannot connect to PulseAudio bus";
-}
 
 MusicController::Status MusicController::status() const
 {
@@ -325,27 +285,6 @@ bool MusicController::shuffle() const
 	return d->controller->shuffle();
 }
 
-int MusicController::volume() const
-{
-    uint volume = -1;
-
-    QDBusMessage call = QDBusMessage::createMethodCall("com.Meego.MainVolume2", "/com/meego/mainvolume2",
-                                                   "org.freedesktop.DBus.Properties", "Get");
-    call << "com.Meego.MainVolume2" << "CurrentStep";
-
-    if (d_ptr->_pulseBus == nullptr) {
-        qWarning() << "bus not available";
-        return volume;
-    }
-
-    QDBusReply<QDBusVariant> volumeReply = d_ptr->_pulseBus->call(call);
-    if (volumeReply.isValid()) {
-        // Decide the new value for volume, taking limits into account
-        volume = volumeReply.value().variant().toUInt();
-    }
-    return volume;
-}
-
 void MusicController::play()
 {
 	Q_D(MusicController);
@@ -374,50 +313,6 @@ void MusicController::previous()
 {
 	Q_D(MusicController);
 	d->controller->previous();
-}
-
-void MusicController::setVolume(const uint newVolume)
-{
-    qDebug() << "Setting volume: " << newVolume;
-    d_ptr->connectPulseBus();
-    QDBusMessage call = QDBusMessage::createMethodCall("com.Meego.MainVolume2", "/com/meego/mainvolume2",
-                                          "org.freedesktop.DBus.Properties", "Set");
-    call << "com.Meego.MainVolume2" << "CurrentStep" << QVariant::fromValue(QDBusVariant(newVolume));
-
-    if (d_ptr->_pulseBus == nullptr) {
-        qWarning() << "bus not available";
-        return;
-    }
-
-    QDBusError err = d_ptr->_pulseBus->call(call);
-    if (err.isValid()) {
-        qWarning() << err.message();
-    }
-}
-
-void MusicController::volumeUp()
-{
-    d_ptr->connectPulseBus();
-    uint curVolume = this->volume();
-    uint newVolume = curVolume + 1;
-    if (newVolume >= d_ptr->_maxVolume) {
-        qDebug() << "Cannot increase volume beyond maximum " << d_ptr->_maxVolume;
-        return;
-    }
-    setVolume(newVolume);
-}
-
-void MusicController::volumeDown()
-{
-    d_ptr->connectPulseBus();
-    uint curVolume = this->volume();
-    if (curVolume == 0) {
-        qDebug() << "Cannot decrease volume beyond 0";
-        return;
-    }
-    uint newVolume = curVolume - 1;
-
-    setVolume(newVolume);
 }
 
 }

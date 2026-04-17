@@ -21,6 +21,7 @@
 
 #include <AmberMpris/mpris.h>
 #include <AmberMpris/mpriscontroller.h>
+#include <QtDBus/QDBusInterface>
 
 #include "musiccontroller.h"
 
@@ -43,10 +44,15 @@ public:
 	QString curArtist;
 	QString curAlbumArt;
 	int curDuration;
+
+#if defined(MER_EDITION_SAILFISH)
     QDBusConnection *_pulseBus = nullptr;
     uint _maxVolume = 0;
-
     void connectPulseBus();
+#elif defined(UUITK_EDITION)
+    QDBusInterface *_accountsIface = nullptr;
+    void connectAccountsBus();
+#endif
 
 private:
 	static QString stripAlbumArtComponent(const QString& component);
