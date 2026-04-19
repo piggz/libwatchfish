@@ -21,6 +21,11 @@
 
 #include <AmberMpris/mpris.h>
 #include <AmberMpris/mpriscontroller.h>
+#include <QtDBus/QDBusInterface>
+
+#if !defined(MER_EDITION_SAILFISH) && !defined(UUITK_EDITION)
+#include <pulse/pulseaudio.h>
+#endif
 
 #include "musiccontroller.h"
 
@@ -43,10 +48,24 @@ public:
 	QString curArtist;
 	QString curAlbumArt;
 	int curDuration;
+
+#if defined(MER_EDITION_SAILFISH)
     QDBusConnection *_pulseBus = nullptr;
     uint _maxVolume = 0;
-
     void connectPulseBus();
+#elif defined(UUITK_EDITION)
+    QDBusInterface *_accountsIface = nullptr;
+    void connectAccountsBus();
+#else
+    // Native PulseAudio (libpulse) state for Kirigami/desktop
+    pa_mainloop     *_paMainloop = nullptr;
+    pa_context      *_paContext  = nullptr;
+    int              _cachedVolume = -1; // 0-100, -1 = unknown
+    bool connectPulse();
+    void disconnectPulse();
+    // Iterate the mainloop until the operation completes or timeout
+    bool iterateMainloop(pa_operation *op);
+#endif
 
 private:
 	static QString stripAlbumArtComponent(const QString& component);

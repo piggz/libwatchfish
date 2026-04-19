@@ -103,14 +103,23 @@ if(WATCHFISH_FEATURES MATCHES "music")
     target_include_directories(libwatchfish PUBLIC ${MPRIS_INCLUDE_DIRS})
     target_link_libraries(libwatchfish PUBLIC ${MPRIS_LIBRARIES})
 
-    list(APPEND SOURCES
-        musiccontroller.cpp
-    )
-    list(APPEND HEADERS
-        musiccontroller.h
-        musiccontroller_p.h
-    )
-    qt_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
+    list(APPEND SOURCES musiccontroller.cpp)
+    list(APPEND HEADERS musiccontroller.h musiccontroller_p.h)
+
+    if(FLAVOR STREQUAL "silica")
+        target_compile_definitions(libwatchfish PUBLIC MER_EDITION_SAILFISH)
+        list(APPEND SOURCES musiccontroller_sailfish.cpp)
+        qt_add_dbus_interface(DBUS_INTERFACES_GEN com.Meego.MainVolume2.xml mainvolume2_interface)
+    elseif(FLAVOR STREQUAL "uuitk")
+        target_compile_definitions(libwatchfish PUBLIC UUITK_EDITION)
+        list(APPEND SOURCES musiccontroller_ubuntu.cpp)
+    else()
+        pkg_check_modules(PULSEAUDIO REQUIRED libpulse)
+        target_include_directories(libwatchfish PUBLIC ${PULSEAUDIO_INCLUDE_DIRS})
+        target_link_libraries(libwatchfish PUBLIC ${PULSEAUDIO_LIBRARIES})
+        target_compile_options(libwatchfish PUBLIC ${PULSEAUDIO_CFLAGS_OTHER})
+        list(APPEND SOURCES musiccontroller_kirigami.cpp)
+    endif()
 endif()
 
 # Feature: calendar
