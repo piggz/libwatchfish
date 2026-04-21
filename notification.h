@@ -57,7 +57,7 @@ class Notification : public QObject
 
 
 public:
-	explicit Notification(uint id, QObject *parent = 0);
+	explicit Notification(uint id = 0, QObject *parent = 0);
 	~Notification();
 
 	enum CloseReason {

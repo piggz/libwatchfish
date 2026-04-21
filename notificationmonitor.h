@@ -41,9 +41,12 @@ public:
 	explicit NotificationMonitor(QObject *parent = 0);
 	~NotificationMonitor();
 
+    Q_INVOKABLE watchfish::Notification* getNotification(uint id) const;
+
 signals:
     /** Emitted when a notification arrives. */
     void notification(watchfish::Notification *n);
+    void notificationClosed(quint32 nid, quint32 reason);
 
 private:
 	NotificationMonitorPrivate * const d_ptr;
