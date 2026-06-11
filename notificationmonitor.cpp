@@ -170,9 +170,14 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		}
 	}
 
-	if (proto.appName == "ayatana-indicator-sound") {
-		qCDebug(notificationMonitorCat) << "Drop notification" << proto;
-		return;
+	static const QSet<QString> kIgnoredApps = {
+	    "ayatana-indicator-sound", // information about volume change isn't interested for user at all
+	    "Lomiri Telephony Service Approver" // phone calls are handled separatelly by voicecall controller
+	};
+
+	if (kIgnoredApps.contains(proto.appName)) {
+	    qCDebug(notificationMonitorCat) << "Drop notification" << proto;
+	    return;
 	}
 
 	if (is_new_notification) {
