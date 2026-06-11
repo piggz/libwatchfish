@@ -27,7 +27,12 @@
 namespace watchfish
 {
 
-VoiceCallController::VoiceCallController(QObject *parent): VoiceCallControllerBase(parent)
+VoiceCallController::VoiceCallController(QObject *parent): VoiceCallControllerBase(parent),
+    m_lastCookie(0),
+    m_inCall(false),
+    m_ringing(false),
+    m_callerId(QString()),
+    m_callerName(QString())
 {
 
     // Calls
@@ -49,10 +54,14 @@ void VoiceCallController::incomingCall(uint cookie, const QString &number, const
     m_callerId = number;
     m_callerName = name;
 
-    m_ringing = true;
-    m_inCall = true;
-    emit inCallChanged();
-    emit ringingChanged();
+    if (!m_inCall) {
+        m_inCall = true;
+        emit inCallChanged();
+    }
+    if (!m_ringing) {
+        m_ringing = true;
+        emit ringingChanged();
+    }
     emit callerIdChanged();
 }
 
@@ -70,10 +79,14 @@ QString VoiceCallController::callerId() const {
 
 void VoiceCallController::answer() {
     m_telepathyMonitor->accept(m_lastCookie);
-    m_ringing = false;
-    m_inCall = true;
-    emit inCallChanged();
-    emit ringingChanged();
+    if (m_ringing) {
+        m_ringing = false;
+        emit ringingChanged();
+    }
+    if (!m_inCall) {
+        m_inCall = true;
+        emit inCallChanged();
+    }
 }
 
 void VoiceCallController::hangup() {
@@ -82,26 +95,38 @@ void VoiceCallController::hangup() {
 
 void VoiceCallController::callStarted(uint cookie) {
     m_lastCookie = cookie;
-    m_ringing = false;
-    m_inCall = true;
-    emit inCallChanged();
-    emit ringingChanged();
+    if (m_ringing) {
+        m_ringing = false;
+        emit ringingChanged();
+    }
+    if (!m_inCall) {
+        m_inCall = true;
+        emit inCallChanged();
+    }
 }
 
 void VoiceCallController::callEnded(uint cookie, bool missed) {
     m_lastCookie = cookie;
-    m_ringing = false;
-    m_inCall = false;
-    emit inCallChanged();
-    emit ringingChanged();
+    if (m_ringing) {
+        m_ringing = false;
+        emit ringingChanged();
+    }
+    if (m_inCall) {
+        m_inCall = false;
+        emit inCallChanged();
+    }
 }
 
 void VoiceCallController::hangupCall(uint cookie) {
     m_telepathyMonitor->hangupCall(cookie);
-    m_ringing = false;
-    m_inCall = false;
-    emit inCallChanged();
-    emit ringingChanged();
+    if (m_ringing) {
+        m_ringing = false;
+        emit ringingChanged();
+    }
+    if (m_inCall) {
+        m_inCall = false;
+        emit inCallChanged();
+    }
 }
 
 } // namespace
