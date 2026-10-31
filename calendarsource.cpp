@@ -145,13 +145,23 @@ QList<CalendarEvent> CalendarSource::fetchEvents(const QDate &start, const QDate
 
 	QList<CalendarEvent> events;
 
-    KCalendarCore::OccurrenceIterator it(*d->calendar, QDateTime(start), QDateTime(end));
+    // A range that stops at midnight of the last day misses events on that day.
+    const QDateTime rangeStart(start, QTime(0, 0));
+    const QDateTime rangeEnd(end, QTime(23, 59, 59));
+    KCalendarCore::OccurrenceIterator it(*d->calendar, rangeStart, rangeEnd);
     while (it.hasNext()) {
         it.next();
-        if (!d->calendar->isVisible(it.incidence()) || it.incidence()->type() != KCalendarCore::IncidenceBase::TypeEvent) {
+        const KCalendarCore::Incidence::Ptr incidence = it.incidence();
+        if (!d->calendar->isVisible(incidence) || incidence->type() != KCalendarCore::IncidenceBase::TypeEvent) {
             continue;
         }
-        events.append(d->convertToEvent(it.incidence(), it.occurrenceStartDate(), it.occurrenceStartDate())); //!TODO end date is newer api
+
+        // The iterator only gives a start. Ask the incidence for the end of this
+        // occurrence, so a timed event keeps its duration.
+        const QDateTime occurrenceStart = it.occurrenceStartDate();
+        const QDateTime occurrenceEnd = incidence->endDateForStart(occurrenceStart);
+
+        events.append(d->convertToEvent(incidence, occurrenceStart, occurrenceEnd));
     }
 
 	qCDebug(calendarSourceCat) << "Returning" << events.size() << "events";
