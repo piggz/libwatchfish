@@ -17,7 +17,9 @@
  */
 
 #include <QtDBus/QDBusConnection>
+#include <QtDBus/QDBusInterface>
 #include <QtDBus/QDBusPendingCall>
+#include <QtDBus/QDBusReply>
 #include <QtDBus/QDBusMessage>
 #include "notification.h"
 
@@ -278,6 +280,25 @@ void Notification::close()
 													  "CloseNotification");
 	msg << quint32(d->id);
 	QDBusConnection::sessionBus().asyncCall(msg);
+
+#ifdef UUITK_EDITION
+	// Lomiri keeps the notification in Postal until its persistent tags are cleared.
+	QString pkgName = d->appId.split("_").at(0);
+	pkgName = pkgName.replace(".", "_2e").replace("-", "_2d");
+	QString path = QString("/com/lomiri/Postal/%1").arg(pkgName);
+
+	QDBusInterface iface("com.lomiri.Postal", path, "com.lomiri.Postal", QDBusConnection::sessionBus());
+	QDBusReply<QStringList> tags = iface.call("ListPersistent", d->appId);
+	if (tags.isValid()) {
+		QDBusMessage clear = QDBusMessage::createMethodCall("com.lomiri.Postal", path, "com.lomiri.Postal",
+															"ClearPersistent");
+		clear << d->appId;
+		foreach (const QString &tag, tags.value()) {
+			clear << tag;
+		}
+		QDBusConnection::sessionBus().asyncCall(clear);
+	}
+#endif
 }
 
 }

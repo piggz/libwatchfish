@@ -66,6 +66,10 @@ if(WATCHFISH_FEATURES MATCHES "notificationmonitor")
     target_include_directories(libwatchfish PUBLIC ${DBUS_INCLUDE_DIRS})
     target_link_libraries(libwatchfish PUBLIC ${DBUS_LIBRARIES})
 
+    if(FLAVOR STREQUAL "uuitk")
+        target_compile_definitions(libwatchfish PUBLIC UUITK_EDITION)
+    endif()
+
     list(APPEND SOURCES
         notificationmonitor.cpp
         notification.cpp
