@@ -34,6 +34,7 @@ struct Action
 	QString iface;
 	QString method;
 	QVariantList args;
+	QString type;
 };
 }
 
@@ -244,7 +245,7 @@ QStringList Notification::actions() const
 	return d->actions.keys();
 }
 
-void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args)
+void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args, const QString &type)
 {
 	Q_D(Notification);
 	Action &a = d->actions[action];
@@ -253,6 +254,13 @@ void Notification::addDBusAction(const QString &action, const QString &service, 
 	a.iface = iface;
 	a.method = method;
 	a.args = args;
+	a.type = type;
+}
+
+QString Notification::actionType(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).type;
 }
 
 QString Notification::actionInterface(const QString &action) const

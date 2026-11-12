@@ -196,7 +196,8 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 			}
 			n->addDBusAction(actionName,
 							 remoteParts[0], remoteParts[1], remoteParts[2], remoteParts[3],
-							 args);
+							 args,
+							 proto.hints.value(QString("x-nemo-remote-action-type-%1").arg(actionName)));
 		}
 	}
 
