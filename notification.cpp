@@ -19,6 +19,7 @@
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusPendingCall>
 #include <QtDBus/QDBusMessage>
+#include <QtCore/QDebug>
 #include "notification.h"
 
 namespace watchfish
@@ -268,13 +269,38 @@ QVariantList Notification::actionArgs(const QString &action) const
 
 void Notification::invokeAction(const QString &action)
 {
+	invokeAction(action, QString());
+}
+
+void Notification::invokeAction(const QString &action, const QString &inputText)
+{
 	Q_D(Notification);
 	if (d->actions.contains(action)) {
 		const Action &a = d->actions[action];
 		if (!a.service.isEmpty()) {
+			if (!a.path.isEmpty() && !a.path.startsWith(QLatin1Char('/'))) {
+				qWarning() << "watchfish: action" << action << "has an invalid object path, not invoked";
+				emit actionFailed(action, QStringLiteral("Invalid object path in remote action"));
+				return;
+			}
 			QDBusMessage msg = QDBusMessage::createMethodCall(a.service, a.path, a.iface, a.method);
-			msg.setArguments(a.args);
-			QDBusConnection::sessionBus().asyncCall(msg);
+			QVariantList args = a.args;
+			if (!inputText.isNull()) {
+				args << inputText;
+			}
+			msg.setArguments(args);
+			if (inputText.isNull()) {
+				QDBusConnection::sessionBus().asyncCall(msg);
+			} else {
+				// Input (reply) actions must not fail silently: an asyncCall gives the
+				// caller no way to learn the result, so call and log the error instead.
+				QDBusMessage reply = QDBusConnection::sessionBus().call(msg);
+				if (reply.type() == QDBusMessage::ErrorMessage) {
+					qWarning() << "watchfish: action" << action << "failed:"
+							   << reply.errorName() << reply.errorMessage();
+					emit actionFailed(action, reply.errorMessage());
+				}
+			}
 		}
 	}
 }

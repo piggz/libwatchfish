@@ -113,9 +113,13 @@ public:
 
 public slots:
 	void invokeAction(const QString &action);
+	/** For "input"-type actions: appends inputText as the last argument. */
+	void invokeAction(const QString &action, const QString &inputText);
 	void close();
 
 signals:
+	/** Emitted when invoking an action over D-Bus returns an error. */
+	void actionFailed(const QString &action, const QString &error);
 	void appIdChanged();
 	void appNameChanged();
 	void summaryChanged();
