@@ -17,6 +17,7 @@
  */
 
 #include <QRegularExpression>
+#include <QtCore/QDataStream>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QMessageLogger>
@@ -31,6 +32,26 @@ namespace watchfish
 {
 
 Q_LOGGING_CATEGORY(notificationMonitorCat, "watchfish-NotificationMonitor")
+
+namespace
+{
+// Senders encode each remote action argument as base64 of a QDataStream-
+// serialized QVariant, see encodeDBusCall() in nemo-qml-plugin-notifications.
+// Keep the QVariant, so a call gets numbers as numbers. A token that does not
+// decode is passed on as a plain string.
+QVariant decodeActionArg(const QString &token)
+{
+	QByteArray raw = QByteArray::fromBase64(token.toUtf8());
+	if (raw.isEmpty())
+		return token;
+	QDataStream in(raw);
+	QVariant value;
+	in >> value;
+	if (in.status() != QDataStream::Ok || !in.atEnd() || !value.isValid())
+		return token;
+	return value;
+}
+}
 
 QDebug operator<<(QDebug &debug, const ProtoNotification &proto)
 {
@@ -164,9 +185,18 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		QString remote = proto.hints.value(hintName);
 		QStringList remoteParts = remote.split(' ');
 		if (remoteParts.size() >= 4) {
+			// Senders with no object path write an empty field, normalized to "/".
+			// libdbus rejects "/" in a method call, keep it as unspecified (empty).
+			if (remoteParts[1] == QLatin1String("/")) {
+				remoteParts[1].clear();
+			}
+			QVariantList args;
+			for (const QString &arg : remoteParts.mid(4)) {
+				args << decodeActionArg(arg);
+			}
 			n->addDBusAction(actionName,
 							 remoteParts[0], remoteParts[1], remoteParts[2], remoteParts[3],
-							 remoteParts.mid(4));
+							 args);
 		}
 	}
 

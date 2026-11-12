@@ -32,7 +32,7 @@ struct Action
 	QString path;
 	QString iface;
 	QString method;
-	QStringList args;
+	QVariantList args;
 };
 }
 
@@ -243,7 +243,7 @@ QStringList Notification::actions() const
 	return d->actions.keys();
 }
 
-void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QStringList &args)
+void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args)
 {
 	Q_D(Notification);
 	Action &a = d->actions[action];
@@ -254,6 +254,18 @@ void Notification::addDBusAction(const QString &action, const QString &service, 
 	a.args = args;
 }
 
+QString Notification::actionInterface(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).iface;
+}
+
+QVariantList Notification::actionArgs(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).args;
+}
+
 void Notification::invokeAction(const QString &action)
 {
 	Q_D(Notification);
@@ -261,9 +273,7 @@ void Notification::invokeAction(const QString &action)
 		const Action &a = d->actions[action];
 		if (!a.service.isEmpty()) {
 			QDBusMessage msg = QDBusMessage::createMethodCall(a.service, a.path, a.iface, a.method);
-			foreach (const QString &arg, a.args) {
-				msg << arg;
-			}
+			msg.setArguments(a.args);
 			QDBusConnection::sessionBus().asyncCall(msg);
 		}
 	}
