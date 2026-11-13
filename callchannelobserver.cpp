@@ -87,11 +87,23 @@ void TelepathyMonitor::accountReady(Tp::PendingOperation* operation)
 
 void TelepathyMonitor::onCallStarted(Tp::CallChannelPtr callChannel)
 {
+    Tp::PendingReady* ready = callChannel->becomeReady(Tp::CallChannel::FeatureCallState);
+    connect(ready, &Tp::PendingOperation::finished, this, [this, callChannel](Tp::PendingOperation* op) {
+        // At start, the observer also reports old channels that no longer exist. They never end,
+        // so they would keep the controller ringing and the next real call would not be reported.
+        if (op->isError() || callChannel->callState() == Tp::CallStateEnded) {
+            qDebug() << "Ignore call channel" << callChannel->objectPath() << op->errorName();
+            return;
+        }
+        onCallReady(callChannel);
+    });
+}
+
+void TelepathyMonitor::onCallReady(Tp::CallChannelPtr callChannel)
+{
     m_cookie++;
     m_currentCalls.insert(m_cookie, callChannel.data());
     m_currentCallStates.insert(m_cookie, Tp::CallStateInitialising);
-
-    callChannel->becomeReady(Tp::CallChannel::FeatureCallState);
 
     connect(callChannel.data(), &Tp::CallChannel::callStateChanged, this, &TelepathyMonitor::callStateChanged);
 
