@@ -283,9 +283,21 @@ void Notification::close()
 
 #ifdef UUITK_EDITION
 	// Lomiri keeps the notification in Postal until its persistent tags are cleared.
+	// Only click apps (pkg_app_version) use Postal. System apps such as
+	// "Lomiri Telephony Service Indicator" have spaces, and libdbus aborts on such a path.
+	if (!d->appId.contains("_")) {
+		return;
+	}
 	QString pkgName = d->appId.split("_").at(0);
-	pkgName = pkgName.replace(".", "_2e").replace("-", "_2d");
-	QString path = QString("/com/lomiri/Postal/%1").arg(pkgName);
+	QString escaped;
+	foreach (const QChar &c, pkgName) {
+		if (c.isLetterOrNumber() && c.unicode() < 128) {
+			escaped += c;
+		} else {
+			escaped += QString("_%1").arg(c.unicode() & 0xff, 2, 16, QChar('0'));
+		}
+	}
+	QString path = QString("/com/lomiri/Postal/%1").arg(escaped);
 
 	QDBusInterface iface("com.lomiri.Postal", path, "com.lomiri.Postal", QDBusConnection::sessionBus());
 	QDBusReply<QStringList> tags = iface.call("ListPersistent", d->appId);
