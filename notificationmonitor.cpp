@@ -189,16 +189,25 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 void NotificationMonitorPrivate::processCloseNotification(quint32 id, quint32 reason)
 {
 	qCDebug(notificationMonitorCat) << "Close notification" << id << reason;
-	emit notificationClosed(id, reason);
 
 	Notification *n = _notifs.value(id, 0);
-	if (n) {
-		_notifs.remove(id);
-		emit n->closed(static_cast<Notification::CloseReason>(reason));
-		n->deleteLater();
-	} else {
+	if (!n) {
 		qCDebug(notificationMonitorCat) << " but it is not found";
+		return;
 	}
+
+#ifdef UUITK_EDITION
+	// Lomiri hides the bubble after a few seconds, but the notification stays in the indicator
+	if (reason == Notification::Expired) {
+		qCDebug(notificationMonitorCat) << " but it stays in the indicator";
+		return;
+	}
+#endif
+
+	emit notificationClosed(id, reason);
+	_notifs.remove(id);
+	emit n->closed(static_cast<Notification::CloseReason>(reason));
+	n->deleteLater();
 }
 
 void NotificationMonitorPrivate::sendMessageWithString(const char *service, const char *path, const char *iface, const char *method, const char *arg)
