@@ -63,6 +63,8 @@ private:
 	void processIncomingNotification(quint32 id, const ProtoNotification &proto);
 	/** Raises appropiate notification signal. */
 	void processCloseNotification(quint32 id, quint32 reason);
+    /** Closes the notification of a Postal message that was removed from the Lomiri indicator. */
+    void processPostalRemoved(const QString &postalId);
 
 	/** Sends a D-Bus message for a method call with a single string argument. */
 	void sendMessageWithString(const char *service, const char *path, const char *iface, const char *method, const char *arg);
@@ -93,6 +95,8 @@ private:
 
 	/** The current set of monitored notifications, indexed by id. */
 	QMap<quint32, Notification*> _notifs;
+    /** Notification ids, indexed by Postal message id (Lomiri). */
+    QHash<QString, quint32> _postalIds;
 	/** Low level dbus connection used for sniffing. */
 	DBusConnection *_conn;
 	/** Serials of DBUS method calls of which we are expecting a reply. */
