@@ -19,6 +19,8 @@
 #include <QRegularExpression>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
+#include <QtCore/QJsonDocument>
+#include <QtCore/QJsonObject>
 #include <QtCore/QMessageLogger>
 #include <QtCore/QSettings>
 #include <QtCore/QSocketNotifier>
@@ -66,7 +68,13 @@ NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
 	const char *rules[] = {
 		"type='method_call',interface='org.freedesktop.Notifications',member='Notify'",
 		"type='method_return',sender='org.freedesktop.Notifications'",
-		"type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'"
+		"type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'",
+#ifdef UUITK_EDITION
+    // Lomiri indicator: a message is dismissed or tapped there, or the app clears it
+    "type='method_call',interface='org.ayatana.indicator.messages.application',member='Dismiss'",
+    "type='method_call',interface='org.ayatana.indicator.messages.application',member='ActivateMessage'",
+    "type='signal',interface='org.ayatana.indicator.messages.application',member='MessageRemoved'",
+#endif
 	};
 
 	DBusMessage *msg = dbus_message_new_method_call("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.Monitoring", "BecomeMonitor");
@@ -75,7 +83,7 @@ NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
 		DBusMessageIter iter, sub;
 		dbus_message_iter_init_append(msg, &iter);
 		dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "s", &sub);
-		for (int i = 0; i < 3; ++i) {
+		for (size_t i = 0; i < sizeof(rules) / sizeof(rules[0]); ++i) {
 			dbus_message_iter_append_basic(&sub, DBUS_TYPE_STRING, &rules[i]);
 		}
 		dbus_message_iter_close_container(&iter, &sub);
@@ -98,6 +106,13 @@ NotificationMonitorPrivate::NotificationMonitorPrivate(NotificationMonitor *q)
 		addMatchRule("type='method_call',interface='org.freedesktop.Notifications',member='Notify',eavesdrop='true'");
 		addMatchRule("type='method_return',sender='org.freedesktop.Notifications',eavesdrop='true'");
 		addMatchRule("type='signal',sender='org.freedesktop.Notifications',path='/org/freedesktop/Notifications',interface='org.freedesktop.Notifications',member='NotificationClosed'");
+#ifdef UUITK_EDITION
+        addMatchRule("type='method_call',interface='org.ayatana.indicator.messages.application',member='Dismiss',"
+                     "eavesdrop='true'");
+        addMatchRule("type='method_call',interface='org.ayatana.indicator.messages.application',"
+                     "member='ActivateMessage',eavesdrop='true'");
+        addMatchRule("type='signal',interface='org.ayatana.indicator.messages.application',member='MessageRemoved'");
+#endif
 	}
 
 	dbus_bool_t result = dbus_connection_add_filter(_conn, busMessageFilter,
@@ -182,6 +197,22 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 
 	if (is_new_notification) {
 		_notifs.insert(id, n);
+#ifdef UUITK_EDITION
+        // Postal puts its message id into the action. The Lomiri indicator uses this id when the message is removed.
+        for (int i = 0; i < proto.actions.size(); i += 2) {
+            QJsonObject postalAction = QJsonDocument::fromJson(proto.actions[i].toUtf8()).object();
+            QString postalId = postalAction.value("nid").toString();
+            if (!postalId.isEmpty()) {
+                _postalIds.insert(postalId, id);
+            }
+            // "act" is the URL that opens the app, like a tap on the notification
+            QString url = postalAction.value("act").toString();
+            if (!url.isEmpty()) {
+                n->addDBusAction("default", "com.lomiri.URLDispatcher", "/com/lomiri/URLDispatcher",
+                    "com.lomiri.URLDispatcher", "DispatchURL", { url, QString() });
+            }
+        }
+#endif
 		emit q->notification(n);
 	}
 }
@@ -189,16 +220,34 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 void NotificationMonitorPrivate::processCloseNotification(quint32 id, quint32 reason)
 {
 	qCDebug(notificationMonitorCat) << "Close notification" << id << reason;
-	emit notificationClosed(id, reason);
 
 	Notification *n = _notifs.value(id, 0);
-	if (n) {
-		_notifs.remove(id);
-		emit n->closed(static_cast<Notification::CloseReason>(reason));
-		n->deleteLater();
-	} else {
+	if (!n) {
 		qCDebug(notificationMonitorCat) << " but it is not found";
+		return;
 	}
+
+#ifdef UUITK_EDITION
+	// Lomiri hides the bubble after a few seconds, but the notification stays in the indicator
+	if (reason == Notification::Expired) {
+		qCDebug(notificationMonitorCat) << " but it stays in the indicator";
+		return;
+	}
+#endif
+
+	emit notificationClosed(id, reason);
+	_notifs.remove(id);
+    _postalIds.remove(_postalIds.key(id));
+	emit n->closed(static_cast<Notification::CloseReason>(reason));
+	n->deleteLater();
+}
+
+void NotificationMonitorPrivate::processPostalRemoved(const QString &postalId)
+{
+    qCDebug(notificationMonitorCat) << "Postal message removed" << postalId;
+    if (_postalIds.contains(postalId)) {
+        processCloseNotification(_postalIds.value(postalId), Notification::DismissedByUser);
+    }
 }
 
 void NotificationMonitorPrivate::sendMessageWithString(const char *service, const char *path, const char *iface, const char *method, const char *arg)
@@ -467,6 +516,31 @@ DBusHandlerResult NotificationMonitorPrivate::busMessageFilter(DBusConnection *c
 			ProtoNotification proto = self->parseNotifyCall(msg);
 			self->_pendingConfirmation.insert(serial, proto);
 		}
+#ifdef UUITK_EDITION
+        if (dbus_message_is_method_call(msg, "org.ayatana.indicator.messages.application", "Dismiss")
+            && strcmp(dbus_message_get_signature(msg), "asas") == 0) {
+            // Dismiss(sources, messages): the messages are Postal ids
+            DBusMessageIter iter, sub;
+            dbus_message_iter_init(msg, &iter);
+            dbus_message_iter_next(&iter);
+            dbus_message_iter_recurse(&iter, &sub);
+            while (dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_STRING) {
+                const char *postalId;
+                dbus_message_iter_get_basic(&sub, &postalId);
+                self->processPostalRemoved(QString::fromUtf8(postalId));
+                dbus_message_iter_next(&sub);
+            }
+        }
+        if (dbus_message_is_method_call(msg, "org.ayatana.indicator.messages.application", "ActivateMessage")
+            && strcmp(dbus_message_get_signature(msg), "ssav") == 0) {
+            // ActivateMessage(id, action, parameter): a tap, the id is a Postal id
+            const char* postalId;
+            DBusMessageIter iter;
+            dbus_message_iter_init(msg, &iter);
+            dbus_message_iter_get_basic(&iter, &postalId);
+            self->processPostalRemoved(QString::fromUtf8(postalId));
+        }
+#endif
 		break;
 	case DBUS_MESSAGE_TYPE_METHOD_RETURN:
 		if (self->_pendingConfirmation.contains(dbus_message_get_reply_serial(msg))) {
@@ -492,6 +566,18 @@ DBusHandlerResult NotificationMonitorPrivate::busMessageFilter(DBusConnection *c
 			}
 
 		}
+#ifdef UUITK_EDITION
+        if (dbus_message_is_signal(msg, "org.ayatana.indicator.messages.application", "MessageRemoved")) {
+            // MessageRemoved(id, ...): the id is a Postal id
+            DBusMessageIter iter;
+            dbus_message_iter_init(msg, &iter);
+            if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING) {
+                const char *postalId;
+                dbus_message_iter_get_basic(&iter, &postalId);
+                self->processPostalRemoved(QString::fromUtf8(postalId));
+            }
+        }
+#endif
 		break;
 	}
 
