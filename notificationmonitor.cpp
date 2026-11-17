@@ -17,6 +17,7 @@
  */
 
 #include <QRegularExpression>
+#include <QtCore/QDataStream>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 #include <QtCore/QMessageLogger>
@@ -163,10 +164,21 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 		QString hintName = QString("x-nemo-remote-action-%1").arg(actionName);
 		QString remote = proto.hints.value(hintName);
 		QStringList remoteParts = remote.split(' ');
-		if (remoteParts.size() >= 4) {
-			n->addDBusAction(actionName,
-							 remoteParts[0], remoteParts[1], remoteParts[2], remoteParts[3],
-							 remoteParts.mid(4));
+                // an action with input is a reply, the text goes another way, see InputTextSet in nemo-qml-plugin-notifications
+                bool needsInput = proto.hints.contains(QString("x-nemo-remote-action-input-%1").arg(actionName));
+                if (remoteParts.size() >= 4 && !needsInput) {
+                    // each argument is a QVariant, serialized by QDataStream and base64 encoded
+                    QVariantList args;
+                    for (const QString& part : remoteParts.mid(4)) {
+                        QDataStream stream(QByteArray::fromBase64(part.toUtf8()));
+                        QVariant arg;
+                        stream >> arg;
+                        args.append(arg);
+                    }
+                    QString label = i + 1 < proto.actions.size() ? proto.actions[i + 1] : QString();
+                    n->addDBusAction(actionName,
+                        remoteParts[0], remoteParts[1], remoteParts[2], remoteParts[3],
+                        args, label);
 		}
 	}
 
@@ -284,6 +296,8 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
 			const char *s;
 			dbus_message_iter_get_basic(&value, &s);
 			hints.insert(key, QString::fromUtf8(s));
+                } else if (QString::fromUtf8(key).startsWith("x-nemo-remote-action-input-")) {
+                    hints.insert(key, QString()); // a map, only the key is needed
 		}
 
 		dbus_message_iter_next(&sub);
