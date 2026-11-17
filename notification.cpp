@@ -32,7 +32,8 @@ struct Action
 	QString path;
 	QString iface;
 	QString method;
-	QStringList args;
+        QVariantList args;
+        QString label;
 };
 }
 
@@ -51,6 +52,7 @@ struct NotificationPrivate
 	QString previewSummary;
 	QString previewBody;
 	QHash<QString, Action> actions;
+        QStringList actionNames; // in the order of the Notify call
 };
 
 Notification::Notification(uint id, QObject *parent) : QObject(parent), d_ptr(new NotificationPrivate)
@@ -240,18 +242,29 @@ void Notification::setPreviewBody(const QString &body)
 QStringList Notification::actions() const
 {
 	Q_D(const Notification);
-	return d->actions.keys();
+        return d->actionNames;
 }
 
-void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QStringList &args)
+void Notification::addDBusAction(const QString& action, const QString& service, const QString& path, const QString& iface, const QString& method, const QVariantList& args,
+    const QString& label)
 {
 	Q_D(Notification);
+        if (!d->actionNames.contains(action)) {
+            d->actionNames.append(action);
+        }
 	Action &a = d->actions[action];
 	a.service = service;
 	a.path = path;
 	a.iface = iface;
 	a.method = method;
 	a.args = args;
+        a.label = label;
+}
+
+QString Notification::actionLabel(const QString& action) const
+{
+    Q_D(const Notification);
+    return d->actions.value(action).label;
 }
 
 void Notification::invokeAction(const QString &action)
@@ -261,9 +274,7 @@ void Notification::invokeAction(const QString &action)
 		const Action &a = d->actions[action];
 		if (!a.service.isEmpty()) {
 			QDBusMessage msg = QDBusMessage::createMethodCall(a.service, a.path, a.iface, a.method);
-			foreach (const QString &arg, a.args) {
-				msg << arg;
-			}
+                        msg.setArguments(a.args);
 			QDBusConnection::sessionBus().asyncCall(msg);
 		}
 	}

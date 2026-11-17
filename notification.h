@@ -22,6 +22,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QDateTime>
 #include <QtCore/QStringList>
+#include <QtCore/QVariantList>
 
 namespace watchfish
 {
@@ -104,7 +105,9 @@ public:
 	void setPreviewBody(const QString &body);
 
 	QStringList actions() const;
-	void addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QStringList &args = QStringList());
+        void addDBusAction(const QString& action, const QString& service, const QString& path, const QString& iface, const QString& method, const QVariantList& args = QVariantList(),
+            const QString& label = QString());
+        QString actionLabel(const QString& action) const;
 
 public slots:
 	void invokeAction(const QString &action);
