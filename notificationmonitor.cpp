@@ -194,10 +194,13 @@ void NotificationMonitorPrivate::processIncomingNotification(quint32 id, const P
 			for (const QString &arg : remoteParts.mid(4)) {
 				args << decodeActionArg(arg);
 			}
+			// Notify sends each action as a key followed by its display label.
+			const QString label = i + 1 < proto.actions.size() ? proto.actions[i + 1] : QString();
 			n->addDBusAction(actionName,
 							 remoteParts[0], remoteParts[1], remoteParts[2], remoteParts[3],
 							 args,
-							 proto.hints.value(QString("x-nemo-remote-action-type-%1").arg(actionName)));
+							 proto.hints.value(QString("x-nemo-remote-action-type-%1").arg(actionName)),
+							 label);
 		}
 	}
 

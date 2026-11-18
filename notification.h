@@ -106,11 +106,13 @@ public:
 
 	QStringList actions() const;
 	QString actionType(const QString &action) const;
+	/** Display label the sender gave the action, empty when it gave none. */
+	QString actionLabel(const QString &action) const;
 	/** D-Bus interface of the action's remote call, empty for non-DBus actions. */
 	QString actionInterface(const QString &action) const;
 	/** Remote call arguments, each in the type the sender used. */
 	QVariantList actionArgs(const QString &action) const;
-	void addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args = QVariantList(), const QString &type = QString());
+	void addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args = QVariantList(), const QString &type = QString(), const QString &label = QString());
 
 public slots:
 	void invokeAction(const QString &action);

@@ -35,6 +35,7 @@ struct Action
 	QString method;
 	QVariantList args;
 	QString type;
+	QString label;
 };
 }
 
@@ -246,7 +247,7 @@ QStringList Notification::actions() const
 	return d->actionNames;
 }
 
-void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args, const QString &type)
+void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args, const QString &type, const QString &label)
 {
 	Q_D(Notification);
 	if (!d->actionNames.contains(action)) {
@@ -259,12 +260,19 @@ void Notification::addDBusAction(const QString &action, const QString &service, 
 	a.method = method;
 	a.args = args;
 	a.type = type;
+	a.label = label;
 }
 
 QString Notification::actionType(const QString &action) const
 {
 	Q_D(const Notification);
 	return d->actions.value(action).type;
+}
+
+QString Notification::actionLabel(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).label;
 }
 
 QString Notification::actionInterface(const QString &action) const
