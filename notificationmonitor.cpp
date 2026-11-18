@@ -306,6 +306,12 @@ ProtoNotification NotificationMonitorPrivate::parseNotifyCall(DBusMessage *msg) 
 		}
 	}
 
+	// apkd-bridge forwards Android app notifications and puts the package
+	// name in x-nemo-origin-package. Use it so each app gets its own appId.
+	if (!hints.value("x-nemo-origin-package").isEmpty()) {
+		proto.appId = hints.value("x-nemo-origin-package");
+	}
+
 #ifdef UUITK_EDITION
 	proto.appId = proto.appName;
 	proto.appName = getAppName(proto.appId);
