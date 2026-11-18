@@ -53,6 +53,7 @@ struct NotificationPrivate
 	QString previewSummary;
 	QString previewBody;
 	QHash<QString, Action> actions;
+	QStringList actionNames; // remote actions, in the order of the Notify call
 };
 
 Notification::Notification(uint id, QObject *parent) : QObject(parent), d_ptr(new NotificationPrivate)
@@ -242,12 +243,15 @@ void Notification::setPreviewBody(const QString &body)
 QStringList Notification::actions() const
 {
 	Q_D(const Notification);
-	return d->actions.keys();
+	return d->actionNames;
 }
 
 void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args, const QString &type)
 {
 	Q_D(Notification);
+	if (!d->actionNames.contains(action)) {
+		d->actionNames.append(action);
+	}
 	Action &a = d->actions[action];
 	a.service = service;
 	a.path = path;
