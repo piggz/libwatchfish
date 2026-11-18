@@ -22,6 +22,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QDateTime>
 #include <QtCore/QStringList>
+#include <QtCore/QVariantList>
 
 namespace watchfish
 {
@@ -104,13 +105,24 @@ public:
 	void setPreviewBody(const QString &body);
 
 	QStringList actions() const;
-	void addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QStringList &args = QStringList());
+	QString actionType(const QString &action) const;
+	/** Display label the sender gave the action, empty when it gave none. */
+	QString actionLabel(const QString &action) const;
+	/** D-Bus interface of the action's remote call, empty for non-DBus actions. */
+	QString actionInterface(const QString &action) const;
+	/** Remote call arguments, each in the type the sender used. */
+	QVariantList actionArgs(const QString &action) const;
+	void addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args = QVariantList(), const QString &type = QString(), const QString &label = QString());
 
 public slots:
 	void invokeAction(const QString &action);
+	/** For "input"-type actions: appends inputText as the last argument. */
+	void invokeAction(const QString &action, const QString &inputText);
 	void close();
 
 signals:
+	/** Emitted when invoking an action over D-Bus returns an error. */
+	void actionFailed(const QString &action, const QString &error);
 	void appIdChanged();
 	void appNameChanged();
 	void summaryChanged();

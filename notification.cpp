@@ -19,6 +19,7 @@
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusPendingCall>
 #include <QtDBus/QDBusMessage>
+#include <QtCore/QDebug>
 #include "notification.h"
 
 namespace watchfish
@@ -32,7 +33,9 @@ struct Action
 	QString path;
 	QString iface;
 	QString method;
-	QStringList args;
+	QVariantList args;
+	QString type;
+	QString label;
 };
 }
 
@@ -51,6 +54,7 @@ struct NotificationPrivate
 	QString previewSummary;
 	QString previewBody;
 	QHash<QString, Action> actions;
+	QStringList actionNames; // remote actions, in the order of the Notify call
 };
 
 Notification::Notification(uint id, QObject *parent) : QObject(parent), d_ptr(new NotificationPrivate)
@@ -240,31 +244,83 @@ void Notification::setPreviewBody(const QString &body)
 QStringList Notification::actions() const
 {
 	Q_D(const Notification);
-	return d->actions.keys();
+	return d->actionNames;
 }
 
-void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QStringList &args)
+void Notification::addDBusAction(const QString &action, const QString &service, const QString &path, const QString &iface, const QString &method, const QVariantList &args, const QString &type, const QString &label)
 {
 	Q_D(Notification);
+	if (!d->actionNames.contains(action)) {
+		d->actionNames.append(action);
+	}
 	Action &a = d->actions[action];
 	a.service = service;
 	a.path = path;
 	a.iface = iface;
 	a.method = method;
 	a.args = args;
+	a.type = type;
+	a.label = label;
+}
+
+QString Notification::actionType(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).type;
+}
+
+QString Notification::actionLabel(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).label;
+}
+
+QString Notification::actionInterface(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).iface;
+}
+
+QVariantList Notification::actionArgs(const QString &action) const
+{
+	Q_D(const Notification);
+	return d->actions.value(action).args;
 }
 
 void Notification::invokeAction(const QString &action)
+{
+	invokeAction(action, QString());
+}
+
+void Notification::invokeAction(const QString &action, const QString &inputText)
 {
 	Q_D(Notification);
 	if (d->actions.contains(action)) {
 		const Action &a = d->actions[action];
 		if (!a.service.isEmpty()) {
-			QDBusMessage msg = QDBusMessage::createMethodCall(a.service, a.path, a.iface, a.method);
-			foreach (const QString &arg, a.args) {
-				msg << arg;
+			if (!a.path.isEmpty() && !a.path.startsWith(QLatin1Char('/'))) {
+				qWarning() << "watchfish: action" << action << "has an invalid object path, not invoked";
+				emit actionFailed(action, QStringLiteral("Invalid object path in remote action"));
+				return;
 			}
-			QDBusConnection::sessionBus().asyncCall(msg);
+			QDBusMessage msg = QDBusMessage::createMethodCall(a.service, a.path, a.iface, a.method);
+			QVariantList args = a.args;
+			if (!inputText.isNull()) {
+				args << inputText;
+			}
+			msg.setArguments(args);
+			if (inputText.isNull()) {
+				QDBusConnection::sessionBus().asyncCall(msg);
+			} else {
+				// Input (reply) actions must not fail silently: an asyncCall gives the
+				// caller no way to learn the result, so call and log the error instead.
+				QDBusMessage reply = QDBusConnection::sessionBus().call(msg);
+				if (reply.type() == QDBusMessage::ErrorMessage) {
+					qWarning() << "watchfish: action" << action << "failed:"
+							   << reply.errorName() << reply.errorMessage();
+					emit actionFailed(action, reply.errorMessage());
+				}
+			}
 		}
 	}
 }
