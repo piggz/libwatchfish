@@ -51,6 +51,7 @@ private slots:
     void accountReady(Tp::PendingOperation* operation);
 
     void onCallStarted(Tp::CallChannelPtr callChannel);
+    void onCallReady(Tp::CallChannelPtr callChannel);
     void callStateChanged(Tp::CallState state);
 
 signals:
